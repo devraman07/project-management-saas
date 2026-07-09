@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { db } from "../../DataBase/db.js";
+import { db } from "../../configs/db.js";
 import { projects } from "../../DataBase/Schemas/projects.js";
 
 export const ProjectRepo = {

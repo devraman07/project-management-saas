@@ -1,5 +1,5 @@
 import { and, eq, ne } from "drizzle-orm";
-import { db } from "../../DataBase/db.js";
+import { db } from "../../configs/db.js";
 import { organizations } from "../../DataBase/Schemas/organizations.js";
 
 export const organizationRepo = {

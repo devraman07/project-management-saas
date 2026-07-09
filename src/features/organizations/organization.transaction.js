@@ -1,4 +1,4 @@
-import { db } from "../../DataBase/db.js"
+import { db } from "../../configs/db.js"
 import { membershipRepo } from "../memberships/membership.repository.js";
 import { organizationRepo } from "./organizations.repository.js"
 

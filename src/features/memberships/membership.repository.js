@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import { db } from "../../DataBase/db.js";
+import { db } from "../../configs/db.js";
 import { memberships } from "../../DataBase/Schemas/membership.js";
 import { users } from "../../DataBase/Schemas/users.js";
 import { organizations } from "../../DataBase/Schemas/organizations.js";

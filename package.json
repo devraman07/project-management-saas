@@ -10,7 +10,7 @@
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "db:drop": "drizzle-kit drop",
-    "worker:email": "nodemon src/jobs/workers/email.worker.js"
+    "worker": "nodemon src/jobs/workers/index.js"
   },
   "keywords": [],
   "author": "",
@@ -36,6 +36,7 @@
     "ws": "^8.21.0"
   },
   "devDependencies": {
+    "concurrently": "^9.2.3",
     "drizzle-kit": "^0.31.10",
     "nodemon": "^3.1.14"
   }
