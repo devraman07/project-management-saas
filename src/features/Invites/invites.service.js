@@ -4,6 +4,11 @@ import { userrepo } from "../users/users.repoitory.js";
 import { membershipRepo } from "../memberships/membership.repository.js";
 import { InviteRepo } from "./invites.reposiory.js";
 import { emailQueue } from "../../jobs/queues/email.queue.js";
+import { conflictError } from "../../errors/conflictError.js";
+import { NotFoundError } from "../../errors/NotFoundError.js";
+import { ValidationError } from "../../errors/ValidationError.js";
+import { AuthorizationError } from "../../errors/AuthorizationError.js";
+import { logger } from "../../shared/logger/logger.js";
 
 export const createInviteService = async (
   organizationId,
@@ -13,7 +18,7 @@ export const createInviteService = async (
 ) => {
   const user = await userrepo.findByEmail(email);
 
-  // Existing user already a member?
+ 
   if (user) {
     const existingMembership =
       await membershipRepo.findAllByUserAndOrg(
@@ -23,16 +28,12 @@ export const createInviteService = async (
       );
 
     if (existingMembership) {
-      return {
-        success: false,
-        statusCode: 409,
-        message:
-          "User is already a member of this organization",
-      };
+      logger.warn("user is already a member")
+      throw new conflictError("User is already a member of this organization");
     }
   }
 
-  // Existing pending invite?
+
   const existingInvite =
     await InviteRepo.findPendingByEmailAndOrg(
       undefined,
@@ -41,12 +42,8 @@ export const createInviteService = async (
     );
 
   if (existingInvite) {
-    return {
-      success: false,
-      statusCode: 409,
-      message:
-        "Pending invite already exists",
-    };
+    logger.warn("pneding invite already exists");
+    throw new conflictError("Pending invite already exists");
   }
 
   const token =
@@ -72,6 +69,10 @@ export const createInviteService = async (
     role,
   });
 
+  logger.info({
+    invite : invite
+  }, "invite created successfully")
+
   return {
     success: true,
     statusCode: 201,
@@ -90,33 +91,23 @@ export const getInviteByTokenService =
       );
 
     if (!invite) {
-      return {
-        success: false,
-        statusCode: 404,
-        message: "Invite not found",
-      };
+      
+     throw new NotFoundError("invite not found")
     }
 
     if (invite.status !== "PENDING") {
-      return {
-        success: false,
-        statusCode: 400,
-        message:
-          "Invite is no longer active",
-      };
+      logger.warn("invite no longer exists");
+     throw new ValidationError("invite no longer exist")
     }
 
     if (
       new Date(invite.expiresAt) <
       new Date()
     ) {
-      return {
-        success: false,
-        statusCode: 400,
-        message:
-          "Invite has expired",
-      };
+      logger.warn("trying with expired invite");
+     throw new ValidationError("invite expired")
     }
+  
 
     return {
       success: true,
@@ -136,55 +127,35 @@ export const acceptInviteservice =
       );
 
     if (!invite) {
-      return {
-        success: false,
-        statusCode: 404,
-        message: "Invite not found",
-      };
+      throw new NotFoundError("invite not found");
     }
 
     if (invite.status !== "PENDING") {
-      return {
-        success: false,
-        statusCode: 400,
-        message:
-          "Invite is no longer active",
-      };
+      logger.warn("invite no longer exists");
+      throw new ValidationError("invite no longer exist");
     }
 
     if (
       new Date(invite.expiresAt) <
       new Date()
     ) {
-      return {
-        success: false,
-        statusCode: 400,
-        message:
-          "Invite has expired",
-      };
+      logger.warn("trying with expired invite");
+    throw new ValidationError("Invite has expired");
     }
 
     const user =
       await userrepo.findById(userId);
 
     if (!user) {
-      return {
-        success: false,
-        statusCode: 404,
-        message: "User not found",
-      };
+     throw new NotFoundError("user not found")
     }
 
     if (
       user.email !==
       invite.invitedEmail
     ) {
-      return {
-        success: false,
-        statusCode: 403,
-        message:
-          "This invite belongs to another email address",
-      };
+      logger.warn("trying with invalid  email id");
+      throw new AuthorizationError("This invite belongs to another email address");
     }
 
     const existingMembership =
@@ -195,15 +166,11 @@ export const acceptInviteservice =
       );
 
     if (existingMembership) {
-      return {
-        success: false,
-        statusCode: 409,
-        message:
-          "User is already a member",
-      };
+      logger.warn("existing member trying to join");
+      throw new conflictError("User is already a member");
     }
 
-    // Convert membership id -> user id
+    
     let inviterUserId = null;
 
     if (invite.invitedBy) {
@@ -236,6 +203,10 @@ export const acceptInviteservice =
       invite.id,
       "ACCEPTED"
     );
+
+    logger.info({
+      invite : invite
+    }, "Invite accepted successfully");
 
     return {
       success: true,

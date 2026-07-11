@@ -1,15 +1,22 @@
+import { NotFoundError } from "../../errors/NotFoundError.js";
+import { ValidationError } from "../../errors/ValidationError.js";
+import { logger } from "../../shared/logger/logger.js";
+import { logActivity } from "../../shared/utils/activity/Logger.js";
 import { createOrganizationTransaction } from "./organization.transaction.js";
 import { organizationRepo } from "./organizations.repository.js";
 
-export const createOrganizationService = async (
-  organizationData,
-  user
-) => {
-  const organization =
-    await createOrganizationTransaction(
-      organizationData,
-      user
-    );
+export const createOrganizationService = async (organizationData, user) => {
+  const organization = await createOrganizationTransaction(
+    organizationData,
+    user,
+  );
+
+  logger.info(
+    {
+      organization: organization,
+    },
+    "organization created",
+  );
 
   return {
     success: true,
@@ -20,20 +27,15 @@ export const createOrganizationService = async (
 };
 
 export const getOrgService = async (user) => {
-  const result =
-    await organizationRepo.findAllByCreator(
-      undefined,
-      user.id
-    );
+  const result = await organizationRepo.findAllByCreator(undefined, user.id);
 
   if (result.length === 0) {
-    return {
-      success: false,
-      statusCode: 404,
-      message: "no organizations found",
-    };
+    throw new NotFoundError("organization not found");
   }
-
+  
+  logger.info({
+    result : result
+  }, "get organization route hit successfull");
   return {
     success: true,
     statusCode: 200,
@@ -43,19 +45,15 @@ export const getOrgService = async (user) => {
 };
 
 export const singleOrgService = async (id) => {
-  const result = await organizationRepo.findById(
-    undefined,
-    id
-  );
+  const result = await organizationRepo.findById(undefined, id);
 
   if (!result) {
-    return {
-      success: false,
-      statusCode: 404,
-      message: "organization not found",
-    };
+    throw new NotFoundError("organization not found");
   }
-
+  
+  logger.info({
+    org : result
+  }, "single organization route hit successfully");
   return {
     success: true,
     statusCode: 200,
@@ -65,62 +63,58 @@ export const singleOrgService = async (id) => {
 };
 
 export const updateOrgService = async (id, organizationData, user) => {
-   
-    const organization = await organizationRepo.findById(undefined, id);
+  const organization = await organizationRepo.findById(undefined, id);
 
-    if(!organization) {
-        return {
-            sucess : false,
-        statusCode : 404,
-        message : "wrong Id"
-        };
-    }
+  if (!organization) {
+    throw new ValidationError("using wrong id")
+  }
 
-    const Duplicate = await organizationRepo.findDuplicateForUpdate(
-        undefined, id, organizationData.name,
-        user.id,
-    )
+  const Duplicate = await organizationRepo.findDuplicateForUpdate(
+    undefined,
+    id,
+    organizationData.name,
+    user.id,
+  );
 
-    if(Duplicate) {
-       return {
-        success : false,
-        statusCode : 409,
-        message : "new data required for updation"
-       }
-    }
+  if (Duplicate) {
+    throw new ValidationError("new data required for updation");
+  }
 
-    const updatedOrg = await organizationRepo.update(undefined, id, organizationData);
+  const updatedOrg = await organizationRepo.update(
+    undefined,
+    id,
+    organizationData,
+  );
 
-    return {
-        success : true,
-        statuCode : 200,
-        organization : updatedOrg,
-        message : "organization name updated successfully",
-    }
+  logger.info({
+    org : updatedOrg
+  }, "organization updated successfully");
 
-}
-
-
+  return {
+    success: true,
+    statuCode: 200,
+    organization: updatedOrg,
+    message: "organization name updated successfully",
+  };
+};
 
 export const deleteOrgService = async (id) => {
-    
   const existingOrg = await organizationRepo.findById(undefined, id);
 
-  if(!existingOrg) {
-    return {
-      success : false,
-      statusCode : 404,
-      organizations : [],
-      message : "No organization found",
-    }
+  if (!existingOrg) {
+    throw new NotFoundError("no organization found");
   }
 
   const deletedOrg = await organizationRepo.softDelete(undefined, id);
 
+
+  logger.info({
+    org : deletedOrg
+  }, "organization deleted successfully");
+
   return {
-    success : true,
-    statusCode : 200,
-    message : "Organization Moved to Bin",
-  }
-  
-}
+    success: true,
+    statusCode: 200,
+    message: "Organization Moved to Bin",
+  };
+};

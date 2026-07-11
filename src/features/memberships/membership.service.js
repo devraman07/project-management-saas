@@ -1,3 +1,6 @@
+import { AuthorizationError } from "../../errors/AuthorizationError.js";
+import { NotFoundError } from "../../errors/NotFoundError.js";
+import { logger } from "../../shared/logger/logger.js";
 import { userrepo } from "../users/users.repoitory.js";
 import { membershipRepo } from "./membership.repository.js";
 
@@ -5,12 +8,7 @@ export const getMemberService = async (organizationId) => {
   const members = await membershipRepo.findAllByOrg(undefined, organizationId);
 
   if (members.length === 0) {
-    return {
-      success: false,
-      statusCode: 404,
-      members: [],
-      message: "no members found",
-    };
+    throw new NotFoundError("members not found");
   }
 
   return {
@@ -25,11 +23,7 @@ export const getMyMbershipService = async (user) => {
   const memberships = await membershipRepo.findByUser(undefined, user.id);
 
   if (memberships.length === 0) {
-    return {
-      success: false,
-      statusCode: 404,
-      message: "No membership found for this user",
-    };
+    throw new NotFoundError("No membership found for this user");
   }
 
   return {
@@ -48,22 +42,19 @@ export const deleteMymembershipService = async (userId, organizationId) => {
   );
 
   if (!membership) {
-    return {
-      success: false,
-      statusCode: 404,
-      message: "membership not found",
-    };
+   throw new NotFoundError("membership not found");
   }
 
   if (membership.role === "OWNER") {
-    return {
-      success: false,
-      statusCode: 403,
-      message: "owner cannot leave organization without transferring ownership",
-    };
+    logger.warn("owner cannot leave organization without transferring ownership");
+    throw new AuthorizationError("owner cannot leave organization without transferring ownership");
   }
 
   await membershipRepo.delete(undefined, membership.id);
+
+  logger.info({
+    membership : membership
+  }, "membership deleted successfully");
 
   return {
     success: true,

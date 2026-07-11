@@ -1,3 +1,4 @@
+import { asyncHandler } from "../../shared/utils/asyncHandler.js";
 import {
   createOrganizationService,
   deleteOrgService,
@@ -7,146 +8,68 @@ import {
 } from "./organization.service.js";
 import { createOrgTransformer } from "./organization.transformer.js";
 
-export const createOrgController = async (req, res) => {
-  try {
-    const organizationData = createOrgTransformer(req.body);
+export const createOrgController = asyncHandler(async (req, res) => {
+  const organizationData = createOrgTransformer(req.body);
 
-    const result = await createOrganizationService(organizationData, req.user);
+  const result = await createOrganizationService(organizationData, req.user);
 
-    if (!result.success) {
-      return res.status(result.statusCode).json({
-        success: false,
-        message: result.message,
-      });
-    }
+  return res.status(result.statusCode).json({
+    success: true,
+    organization: result.organization,
+    message: result.message,
+  });
+});
 
+export const getMyOwnedOrgController = asyncHandler(async (req, res) => {
+  const result = await getOrgService(req.user);
+
+  return res.status(result.statusCode).json({
+    success: true,
+    organizations: result.organizations,
+    message: result.message,
+  });
+});
+
+export const singleOrgController = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  const result = await singleOrgService(id);
+
+  if (!result.success) {
     return res.status(result.statusCode).json({
-      success: true,
-      organization: result.organization,
+      success: false,
+      organization: null,
       message: result.message,
     });
-  } catch (error) {
-    console.log(error);
-    console.log(error.cause);
-    return res.status(500).json({
-      success: false,
-      error: error.message,
-      message: "error inside create org controller",
-    });
   }
-};
 
-export const getMyOwnedOrgController = async (req, res) => {
-  try {
-    const result = await getOrgService(req.user);
+  return res.status(result.statusCode).json({
+    success: true,
+    organization: result.organization,
+    message: result.message,
+  });
+});
 
-    if (!result.success) {
-      return res.status(result.statusCode).json({
-        success: false,
-        organizations: [],
-        message: result.message,
-      });
-    }
+export const updateOrgController = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const organizationData = createOrgTransformer(req.body);
 
-    return res.status(result.statusCode).json({
-      success: true,
-      organizations: result.organizations,
-      message: result.message,
-    });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      error: error.message,
-      message: "error inside get organizations controller",
-    });
-  }
-};
+  const result = await updateOrgService(id, organizationData, req.user);
 
-export const singleOrgController = async (req, res) => {
-  try {
-    const { id } = req.params;
+  return res.status(200).json({
+    success: true,
+    organization: result.organization,
+    message: result.message,
+  });
+});
 
-    const result = await singleOrgService(id);
+export const deleteOrgController = asyncHandler(async (req, res) => {
+  const { id } = req.params;
 
-    if (!result.success) {
-      return res.status(result.statusCode).json({
-        success: false,
-        organization: null,
-        message: result.message,
-      });
-    }
+  const result = await deleteOrgService(id);
 
-    return res.status(result.statusCode).json({
-      success: true,
-      organization: result.organization,
-      message: result.message,
-    });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      error: error.message,
-      message: "error inside get organization by id controller",
-    });
-  }
-};
-
-export const updateOrgController = async (req, res) => {
-  try {
-    const {id} = req.params;
-    const organizationData = createOrgTransformer(req.body);
-
-    const result = await updateOrgService(
-    
-      id,
-      organizationData,
-      req.user,
-    );
-    if (!result.success) {
-      return res.status(result.statusCode).json({
-        success: false,
-        message: result.message,
-      });
-    }
-
-    return res.status(200).json({
-      success: true,
-      organization: result.organization,
-      message: result.message,
-    });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      error: error.message,
-      message: "error inside update organization controller",
-    });
-  }
-};
-
-
-
-export const deleteOrgController  =  async (req, res) => {
-  try {
-     const {id} = req.params;
-
-     const result = await deleteOrgService(id);
-
-     if(!result.success) {
-      return res.status(result.statusCode).json({
-        success : false,
-        message : result.message,
-        org : [],
-      })
-     }
-
-     return res.status(result.statusCode).json({
-      success : true,
-      message : result.message
-     })
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      error: error.message,
-      message: "error inside delete organization controller",
-    });
-  }
-}
+  return res.status(result.statusCode).json({
+    success: true,
+    message: result.message,
+  });
+});

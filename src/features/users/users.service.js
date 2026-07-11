@@ -1,7 +1,12 @@
+import { ValidationError } from "../../errors/ValidationError.js";
 import { userrepo } from "./users.repoitory.js";
 
 export const getallUsersService = () => {
   const user = userrepo.findAll();
+
+  if(!user) {
+    throw new ValidationError("user not found");
+  }
 
   const safeUsers = {
     id: user.id,

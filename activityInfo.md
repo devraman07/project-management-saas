@@ -16,7 +16,8 @@ Why?
 
 Authentication is user-specific, not organization-specific.
 
-Things like:
+Things like
+:
 
 Login
 Logout
