@@ -1,3 +1,4 @@
+import { asyncHandler } from "../../shared/utils/asyncHandler.js";
 import { membershipRepo } from "./membership.repository.js";
 import {
   addMemberService,
@@ -8,180 +9,87 @@ import {
   updateMemberRoleService,
 } from "./membership.service.js";
 
-export const getMembersController = async (req, res) => {
-  try {
-    const { organizationId } = req.params;
+export const getMembersController = asyncHandler(async (req, res) => {
+  const { organizationId } = req.params;
 
-    const result = await getMemberService(organizationId);
+  const result = await getMemberService(organizationId);
 
-    if (!result.success) {
-      return res.status(result.statusCode).json({
-        success: false,
-        members: result.members,
-        message: result.message,
-      });
-    }
+  return res.status(result.statusCode).json({
+    success: true,
+    members: result.members,
+    message: result.message,
+  });
+});
 
-    return res.status(result.statusCode).json({
-      success: true,
-      members: result.members,
-      message: result.message,
-    });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      error: error.message,
-      message: "error inside get members controller",
-    });
-  }
-};
+export const myMembershipsController = asyncHandler(async (req, res) => {
+  const result = await getMyMbershipService(req.user);
 
-export const myMembershipsController = async (req, res) => {
-  try {
-    const result = await getMyMbershipService(req.user);
+  return res.status(result.statusCode).json({
+    success: true,
+    memberships: result.memberships,
+    message: result.message,
+  });
+});
 
-    if (!result.success) {
-      return res.status(result.statusCode).json({
-        success: false,
-        message: result.message,
-      });
-    }
+export const deleteMyMembershipController = asyncHandler(async (req, res) => {
+  const { organizationId } = req.params;
 
-    return res.status(result.statusCode).json({
-      success: true,
-      memberships: result.memberships,
-      message: result.message,
-    });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      error: error.message,
-      message: "error inside get my memberships controller",
-    });
-  }
-};
+  const result = await deleteMymembershipService(req.user.id, organizationId);
 
-export const deleteMyMembershipController = async (req, res) => {
-  try {
-    const { organizationId } = req.params;
+  return res.status(result.statusCode).json({
+    success: true,
+    message: result.message,
+  });
+});
 
-    const result = await deleteMymembershipService(req.user.id, organizationId);
+export const updateMemberRoleController = asyncHandler(async (req, res) => {
+  const { organizationId, membershipId } = req.params;
 
-    if (!result.success) {
-      return res.status(result.statusCode).json({
-        success: false,
-        message: result.message,
-      });
-    }
+  const { role } = req.body;
 
-    return res.status(result.statusCode).json({
-      success: true,
-      message: result.message,
-    });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      error: error.message,
-      message: "error inside get my memberships controller",
-    });
-  }
-};
+  const result = await updateMemberRoleService(
+    organizationId,
+    membershipId,
+    role,
+  );
 
-export const updateMemberRoleController = async (req, res) => {
-  try {
-    const { organizationId, membershipId } = req.params;
+  return res.status(result.statusCode).json({
+    success: true,
+    membership: result.membership,
+    message: result.message,
+  });
+});
 
-    const { role } = req.body;
+export const addMemberController = asyncHandler(async (req, res) => {
+  const { organizationId } = req.params;
 
-    const result = await updateMemberRoleService(
-      organizationId,
-      membershipId,
-      role,
-    );
+  const { email, role } = req.body;
 
-    if (!result.success) {
-      return res.status(result.statusCode).json({
-        success: false,
-        message: result.message,
-      });
-    }
+  const result = await addMemberService(
+    organizationId,
+    email,
+    role,
+    req.user.id,
+  );
 
-    return res.status(result.statusCode).json({
-      success: true,
-      membership: result.membership,
-      message: result.message,
-    });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      error: error.message,
-      message: "error inside update member role controller",
-    });
-  }
-};
+  return res.status(result.statusCode).json({
+    success: true,
+    membership: result.membership,
+    message: result.message,
+  });
+});
 
-export const addMemberController = async (req, res) => {
-  try {
-    const { organizationId } = req.params;
+export const removeMemberController = asyncHandler(async (req, res) => {
+  const { organizationId, membershipId } = req.params;
 
-    const { email, role } = req.body;
+  const result = await removeMemberService(
+    organizationId,
+    membershipId,
+    req.user.id,
+  );
 
-    const result = await addMemberService(
-      organizationId,
-      email,
-      role,
-      req.user.id,
-    );
-
-    if (!result.success) {
-      return res.status(result.statusCode).json({
-        success: false,
-        message: result.message,
-      });
-    }
-
-    return res.status(result.statusCode).json({
-      success: true,
-      membership: result.membership,
-      message: result.message,
-    });
-  } catch (error) {
-    console.log(error);
-    console.log(error.cause);
-    return res.status(500).json({
-      success: false,
-      error: error.message,
-      message: "error inside add member controller",
-    });
-  }
-};
-
-export const removeMemberController = async (req, res) => {
-  try {
-    const { organizationId, membershipId } = req.params;
-
-    const result = await removeMemberService(
-      organizationId,
-      membershipId,
-      req.user.id,
-    );
-
-    if (!result.success) {
-      return res.status(result.statusCode).json({
-        success: false,
-        message: result.message,
-      });
-    }
-
-    return res.status(result.statusCode).json({
-      success: true,
-      message: result.message,
-    });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      error: error.message,
-      message: "error inside remove member controller",
-    });
-  }
-};
+  return res.status(result.statusCode).json({
+    success: true,
+    message: result.message,
+  });
+});

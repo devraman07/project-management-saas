@@ -1,3 +1,6 @@
+import { AuthorizationError } from "../../errors/AuthorizationError.js";
+import { NotFoundError } from "../../errors/NotFoundError.js";
+import { logger } from "../../shared/logger/logger.js";
 import { membershipRepo } from "../memberships/membership.repository.js";
 import { ProjectRepo } from "../projects/project.repository.js";
 import { taskRepo } from "./task.repository.js";
@@ -6,11 +9,7 @@ export const createTaskService = async (projectId, taskData, userId) => {
   const project = await ProjectRepo.findById(undefined, projectId);
 
   if (!project) {
-    return {
-      success: false,
-      statusCode: 404,
-      message: "project not found",
-    };
+    throw new NotFoundError("task not found");
   }
 
   const membership = await membershipRepo.findAllByUserAndOrg(
@@ -20,21 +19,15 @@ export const createTaskService = async (projectId, taskData, userId) => {
   );
 
   if (!membership) {
-    return {
-      success: false,
-      statusCode: 403,
-      message: "not a member of this organization",
-    };
+    logger.warn("not a member of this organization");
+    throw new AuthorizationError("not a member of this organization");
   }
 
   const allowedRoles = ["OWNER", "ADMIN", "PROJECT_MANAGER"];
 
   if (!allowedRoles.includes(membership.role)) {
-    return {
-      success: false,
-      statusCode: 403,
-      message: "not allowed to create task",
-    };
+    logger.warn("not allowed to create task");
+    throw new AuthorizationError("not allowed to create task");
   }
 
   const newTask = await taskRepo.create(undefined, {
@@ -46,6 +39,12 @@ export const createTaskService = async (projectId, taskData, userId) => {
     createdBy: membership.id,
   });
 
+  logger.info(
+    {
+      newTask,
+    },
+    "new task created",
+  );
   return {
     success: true,
     statusCode: 201,
@@ -58,11 +57,7 @@ export const getProjectTasksService = async (projectId, userId) => {
   const project = await ProjectRepo.findById(undefined, projectId);
 
   if (!project) {
-    return {
-      success: false,
-      statusCode: 404,
-      message: "project not found",
-    };
+    throw new NotFoundError("project not found");
   }
 
   const membership = await membershipRepo.findAllByUserAndOrg(
@@ -72,19 +67,23 @@ export const getProjectTasksService = async (projectId, userId) => {
   );
 
   if (!membership) {
-    return {
-      success: false,
-      statusCode: 403,
-      message: "not a member of this organization",
-    };
+    logger.warn("not a member of this organization");
+    throw new AuthorizationError("not a member of this organization");
   }
 
   const tasks = await taskRepo.findAllByProject(undefined, projectId);
 
+  logger.info(
+    {
+      tasks: tasks,
+    },
+    "all tasks fetched successfully",
+  );
+
   return {
     success: true,
     statusCode: 200,
-    tasks,
+    tasks: tasks,
     message: "all tasks fetched successfully",
   };
 };
@@ -93,11 +92,7 @@ export const getSingleTaskService = async (taskId, userId) => {
   const task = await taskRepo.findById(undefined, taskId);
 
   if (!task) {
-    return {
-      success: false,
-      statusCode: 404,
-      message: "task not found",
-    };
+    throw new NotFoundError("task not found");
   }
 
   const project = await ProjectRepo.findById(undefined, task.projectId);
@@ -109,12 +104,16 @@ export const getSingleTaskService = async (taskId, userId) => {
   );
 
   if (!membership) {
-    return {
-      success: false,
-      statusCode: 403,
-      message: "not a member of this organization",
-    };
+    logger.warn("not a member of this organization");
+    throw new AuthorizationError("not a member of this organization");
   }
+
+  logger.info(
+    {
+      tasks: task,
+    },
+    "not a member of this organization",
+  );
 
   return {
     success: true,
@@ -128,11 +127,7 @@ export const updateTaskService = async (taskId, updateData, userId) => {
   const task = await taskRepo.findById(undefined, taskId);
 
   if (!task) {
-    return {
-      success: false,
-      statusCode: 404,
-      message: "task not found",
-    };
+    throw new NotFoundError("task not found");
   }
 
   const project = await ProjectRepo.findById(undefined, task.projectId);
@@ -144,24 +139,25 @@ export const updateTaskService = async (taskId, updateData, userId) => {
   );
 
   if (!membership) {
-    return {
-      success: false,
-      statusCode: 403,
-      message: "not a member of this organization",
-    };
+    logger.warn("not a member");
+    throw new AuthorizationError("not a member of this organization");
   }
 
   const allowedRoles = ["OWNER", "ADMIN", "PROJECT_MANAGER"];
 
   if (!allowedRoles.includes(membership.role)) {
-    return {
-      success: false,
-      statusCode: 403,
-      message: "not allowed to update task",
-    };
+    logger.warn("not authorized");
+    throw new AuthorizationError("not allowed to update task");
   }
 
   const updatedTask = await taskRepo.update(undefined, taskId, updateData);
+
+  logger.info(
+    {
+      task: updatedTask,
+    },
+    "task updated successfully",
+  );
 
   return {
     success: true,
@@ -175,11 +171,7 @@ export const updateTaskStatusService = async (taskId, status, userId) => {
   const task = await taskRepo.findById(undefined, taskId);
 
   if (!task) {
-    return {
-      success: false,
-      statusCode: 404,
-      message: "task not found",
-    };
+    throw new NotFoundError("task not found");
   }
 
   const project = await ProjectRepo.findById(undefined, task.projectId);
@@ -191,11 +183,8 @@ export const updateTaskStatusService = async (taskId, status, userId) => {
   );
 
   if (!membership) {
-    return {
-      success: false,
-      statusCode: 403,
-      message: "not a member of this organization",
-    };
+    logger.warn("not a member of this organization");
+    throw new AuthorizationError("not a member of this organization");
   }
 
   const allowedRoles = ["OWNER", "ADMIN", "PROJECT_MANAGER"];
@@ -205,14 +194,18 @@ export const updateTaskStatusService = async (taskId, status, userId) => {
   const isAssignee = task.assignedTo === membership.id;
 
   if (!isManager && !isAssignee) {
-    return {
-      success: false,
-      statusCode: 403,
-      message: "not allowed to update task status",
-    };
+    logger.warn("not allowed to update task status");
+    throw new AuthorizationError("not allowed to update task status");
   }
 
   const updatedTask = await taskRepo.updateStatus(undefined, taskId, status);
+
+  logger.info(
+    {
+      task: updatedTask,
+    },
+    "task status updated successfully",
+  );
 
   return {
     success: true,
@@ -226,11 +219,7 @@ export const assignTaskService = async (taskId, membershipId, userId) => {
   const task = await taskRepo.findById(undefined, taskId);
 
   if (!task) {
-    return {
-      success: false,
-      statusCode: 404,
-      message: "task not found",
-    };
+    throw new NotFoundError("task not found");
   }
 
   const project = await ProjectRepo.findById(undefined, task.projectId);
@@ -242,21 +231,15 @@ export const assignTaskService = async (taskId, membershipId, userId) => {
   );
 
   if (!actorMembership) {
-    return {
-      success: false,
-      statusCode: 403,
-      message: "not a member of this organization",
-    };
+    logger.warn("not a member of this organization");
+    throw new AuthorizationError("not a member of this organization");
   }
 
   const allowedRoles = ["OWNER", "ADMIN", "PROJECT_MANAGER"];
 
   if (!allowedRoles.includes(actorMembership.role)) {
-    return {
-      success: false,
-      statusCode: 403,
-      message: "not allowed to assign task",
-    };
+    logger.warn("not allowed to assign task");
+    throw new AuthorizationError("not allowed to assign task");
   }
 
   const targetMembership = await membershipRepo.findById(
@@ -265,22 +248,23 @@ export const assignTaskService = async (taskId, membershipId, userId) => {
   );
 
   if (!targetMembership) {
-    return {
-      success: false,
-      statusCode: 404,
-      message: "target member not found",
-    };
+    logger.warn("target member not found");
+    throw new NotFoundError("target member not found");
   }
 
   if (targetMembership.organizationId !== project.organizationId) {
-    return {
-      success: false,
-      statusCode: 403,
-      message: "cannot assign task outside organization",
-    };
+    logger.warn("cannot assign task outside organization");
+    throw new AuthorizationError("cannot assign task outside organization");
   }
 
   const updatedTask = await taskRepo.assign(undefined, taskId, membershipId);
+
+  logger.info(
+    {
+      task: updatedTask,
+    },
+    "task assigned successfully",
+  );
 
   return {
     success: true,
@@ -294,11 +278,7 @@ export const deleteTaskService = async (taskId, userId) => {
   const task = await taskRepo.findById(undefined, taskId);
 
   if (!task) {
-    return {
-      success: false,
-      statusCode: 404,
-      message: "task not found",
-    };
+    throw new NotFoundError("task not found");
   }
 
   const project = await ProjectRepo.findById(undefined, task.projectId);
@@ -310,24 +290,25 @@ export const deleteTaskService = async (taskId, userId) => {
   );
 
   if (!membership) {
-    return {
-      success: false,
-      statusCode: 403,
-      message: "not a member of this organization",
-    };
+    logger.warn("not a member of this organization");
+    throw new AuthorizationError("not a member of this organization");
   }
 
   const allowedRoles = ["OWNER", "ADMIN", "PROJECT_MANAGER"];
 
   if (!allowedRoles.includes(membership.role)) {
-    return {
-      success: false,
-      statusCode: 403,
-      message: "not allowed to delete task",
-    };
+    logger.warn("not allowed to delete task");
+    throw new AuthorizationError("not allowed to delete task");
   }
 
   await taskRepo.softDelete(undefined, taskId);
+
+  logger.info(
+    {
+      task: taskId,
+    },
+    "task moved to bin successfully",
+  );
 
   return {
     success: true,

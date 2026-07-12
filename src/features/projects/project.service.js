@@ -1,5 +1,9 @@
 import { ProjectRepo } from "./project.repository.js";
 import { membershipRepo } from "../memberships/membership.repository.js";
+import { conflictError } from "../../errors/conflictError.js";
+import { logger } from "../../shared/logger/logger.js";
+import { NotFoundError } from "../../errors/NotFoundError.js";
+import { AuthorizationError } from "../../errors/AuthorizationError.js";
 
 export const createProjectService = async (
   organizationId,
@@ -12,11 +16,7 @@ export const createProjectService = async (
   );
 
   if (existingProject) {
-    return {
-      success: false,
-      statusCode: 409,
-      message: "project already exists with same name",
-    };
+    throw new conflictError("project already exists with same name");
   }
 
   const newproject = await ProjectRepo.Create(undefined, {
@@ -25,6 +25,13 @@ export const createProjectService = async (
     description: projectData.description,
     createdBy: user.id,
   });
+
+  logger.info(
+    {
+      project: newproject,
+    },
+    "project created successfully",
+  );
 
   return {
     success: true,
@@ -41,12 +48,15 @@ export const getAllprojectsByOrganizationService = async (organizationId) => {
   );
 
   if (projects.length == 0) {
-    return {
-      success: false,
-      statusCode: 404,
-      message: "projects not found",
-    };
+    throw new NotFoundError("project not found");
   }
+
+  logger.info(
+    {
+      projects: projects,
+    },
+    "projects fetched successfully for an organization",
+  );
 
   return {
     success: true,
@@ -60,10 +70,7 @@ export const getSingleProjectService = async (userId, projectId) => {
   const project = await ProjectRepo.findById(undefined, projectId);
 
   if (!project) {
-    return res.status(404).json({
-      success: false,
-      message: "project not found",
-    });
+    throw new NotFoundError("project not found");
   }
 
   const memberShip = await membershipRepo.findAllByUserAndOrg(
@@ -73,12 +80,15 @@ export const getSingleProjectService = async (userId, projectId) => {
   );
 
   if (!memberShip) {
-    return {
-      success: false,
-      statusCode: 403,
-      message: "access denied in project ",
-    };
+    throw new AuthorizationError("access denied in this project");
   }
+
+  logger.info(
+    {
+      project: project,
+    },
+    "project found",
+  );
   return {
     success: true,
     statusCode: 200,
@@ -91,11 +101,7 @@ export const updateProjectService = async (projectId, updateData, userId) => {
   const project = await ProjectRepo.findById(undefined, projectId);
 
   if (!project) {
-    return {
-      success: false,
-      statusCode: 404,
-      message: "project not found",
-    };
+    throw new NotFoundError("task not found");
   }
 
   const membership = await membershipRepo.findAllByUserAndOrg(
@@ -105,21 +111,13 @@ export const updateProjectService = async (projectId, updateData, userId) => {
   );
 
   if (!membership) {
-    return {
-      success: false,
-      statusCode: 403,
-      message: "not a member of this organization",
-    };
+    throw new AuthorizationError("not a member of this organization");
   }
 
   const allowedRoles = ["OWNER", "ADMIN", "PROJECT_MANAGER"];
 
   if (!allowedRoles.includes(membership.role)) {
-    return {
-      success: false,
-      statusCode: 403,
-      message: "not allowed to update project",
-    };
+    throw new AuthorizationError("not authorized to update this project");
   }
 
   const updatedProject = await ProjectRepo.update(
@@ -140,11 +138,7 @@ export const updateProjectStatusService = async (projectId, status, userId) => {
   const project = await ProjectRepo.findById(undefined, projectId);
 
   if (!project) {
-    return {
-      success: false,
-      statusCode: 404,
-      message: "project not found",
-    };
+    throw new NotFoundError("project not found");
   }
 
   const membership = await membershipRepo.findAllByUserAndOrg(
@@ -154,27 +148,28 @@ export const updateProjectStatusService = async (projectId, status, userId) => {
   );
 
   if (!membership) {
-    return {
-      success: false,
-      statusCode: 403,
-      message: "not a member of this organization",
-    };
+    logger.warn("not a member of this organization");
+    throw new AuthorizationError("not a member of this organization");
   }
 
   const allowedRoles = ["OWNER", "ADMIN", "PROJECT_MANAGER"];
 
   if (!allowedRoles.includes(membership.role)) {
-    return {
-      success: false,
-      statusCode: 403,
-      message: "not allowed to update project status",
-    };
+    logger.warn("not allowed to update project status");
+    throw new AuthorizationError("not allowed to update project status");
   }
 
   const updatedProject = await ProjectRepo.updateStatus(
     undefined,
     projectId,
     status,
+  );
+
+  logger.info(
+    {
+      project: updatedProject,
+    },
+    "project status updated successfully",
   );
 
   return {
@@ -189,11 +184,7 @@ export const archiveprojectService = async (projectId, userId) => {
   const project = await ProjectRepo.findById(undefined, projectId);
 
   if (!project) {
-    return {
-      success: false,
-      statusCode: 404,
-      message: "project not found",
-    };
+    throw new NotFoundError("project not found");
   }
 
   const membership = await membershipRepo.findAllByUserAndOrg(
@@ -203,24 +194,25 @@ export const archiveprojectService = async (projectId, userId) => {
   );
 
   if (!membership) {
-    return {
-      success: false,
-      statusCode: 403,
-      message: "not a member of this organization",
-    };
+    logger.warn("not a member of this organization");
+    throw new AuthorizationError("not a member of this organization");
   }
 
   const allowedRoles = ["OWNER", "ADMIN", "PROJECT_MANAGER"];
 
   if (!allowedRoles.includes(membership.role)) {
-    return {
-      success: false,
-      statusCode: 403,
-      message: "not allowed to update project",
-    };
+    logger.warn("not allowed to update project");
+    throw new AuthorizationError("not allowed to update project");
   }
 
   await ProjectRepo.softDelete(undefined, projectId);
+
+  logger.info(
+    {
+      project: projectId,
+    },
+    "project moved to bin",
+  );
 
   return {
     success: true,

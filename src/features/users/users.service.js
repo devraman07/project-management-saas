@@ -1,8 +1,12 @@
 import { ValidationError } from "../../errors/ValidationError.js";
 import { userrepo } from "./users.repoitory.js";
+import { AuthenticationError } from "../../errors/AuthenticationError.js";
+import { AuthorizationError } from "../../errors/AuthorizationError.js";
+import { NotFoundError } from "../../errors/NotFoundError.js";
+import { logger } from "../../shared/logger/logger.js";
 
-export const getallUsersService = () => {
-  const user = userrepo.findAll();
+export const getallUsersService = async () => {
+  const user = await userrepo.findAll();
 
   if(!user) {
     throw new ValidationError("user not found");
@@ -15,6 +19,8 @@ export const getallUsersService = () => {
     role: user.role,
   };
 
+
+
   return {
     success: true,
     users: safeUsers,
@@ -22,16 +28,12 @@ export const getallUsersService = () => {
   };
 };
 
-export const fetchUserProfileService = (id) => {
+export const fetchUserProfileService = async (id) => {
   if (!id) {
-    return {
-      success: false,
-      statusCode: 403,
-      message: "authenticate frist",
-    };
+    throw new AuthenticationError("login frist");
   }
 
-  const profile = userrepo.findById(id);
+  const profile = await userrepo.findById(id);
 
   const safeUser = {
     id: profile.id,
@@ -43,11 +45,12 @@ export const fetchUserProfileService = (id) => {
   return {
     success: true,
     user: safeUser,
+    message : "user profile found successfully"
   };
 };
 
-export const updateUserservice = (targetuserId, updateData) => {
-  const user = userrepo.findById(targetuserId);
+export const updateUserservice = async (targetuserId, updateData) => {
+  const user = await userrepo.findById(targetuserId);
 
   if (updateData.name) {
     user.name = updateData.name;
@@ -58,11 +61,7 @@ export const updateUserservice = (targetuserId, updateData) => {
   }
 
   if (!user) {
-    return {
-      success: false,
-      statuscode: 403,
-      message: "User not found",
-    };
+   throw new AuthorizationError("user not found");
   }
 
   const safeUser = {
@@ -72,6 +71,8 @@ export const updateUserservice = (targetuserId, updateData) => {
     role: user.role,
   };
 
+  logger.info({user : safeUser},"user updated successfully");
+
   return {
     success: true,
     user: safeUser,
@@ -79,18 +80,16 @@ export const updateUserservice = (targetuserId, updateData) => {
   };
 };
 
-export const deleteUserService = (targetUserId) => {
-  const userIndex = userrepo.findById(targetUserId);
+export const deleteUserService = async (targetUserId) => {
+  const userIndex  = await userrepo.findById(targetUserId);
 
   if (userIndex === -1) {
-    return {
-      success: false,
-      statusCode: 404,
-      message: "User not found",
-    };
+    throw new NotFoundError("user not found");
   }
 
   userrepo.delete(userIndex);
+
+  logger.info( {user : targetUserId}, "user deleted successfully");
 
   return {
     success: true,

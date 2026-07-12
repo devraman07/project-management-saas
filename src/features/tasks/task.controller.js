@@ -1,5 +1,6 @@
+import { asyncHandler } from "../../shared/utils/asyncHandler.js";
 import {
-    assignTaskService,
+  assignTaskService,
   createTaskService,
   getProjectTasksService,
   getSingleTaskService,
@@ -7,223 +8,93 @@ import {
   updateTaskStatusService,
 } from "./task.service.js";
 
-export const createTaskController = async (req, res) => {
-  try {
-    const { projectId } = req.params;
+export const createTaskController = asyncHandler(async (req, res) => {
+  const { projectId } = req.params;
 
-    const taskData = req.body;
+  const taskData = req.body;
 
-    const result = await createTaskService(projectId, taskData, req.user.id);
+  const result = await createTaskService(projectId, taskData, req.user.id);
 
-    if (!result.success) {
-      return res.status(result.statusCode).json({
-        success: false,
-        message: result.message,
-      });
-    }
+  return res.status(result.statusCode).json({
+    success: true,
+    task: result.task,
+    message: result.message,
+  });
+});
 
-    return res.status(result.statusCode).json({
-      success: true,
-      task: result.task,
-      message: result.message,
-    });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      error: error.message,
-      message: "error inside create task controller",
-    });
-  }
-};
+export const getProjectTasksController = asyncHandler(async (req, res) => {
+  const { projectId } = req.params;
 
-export const getProjectTasksController = async (req, res) => {
-  try {
-    const { projectId } = req.params;
+  const result = await getProjectTasksService(projectId, req.user.id);
 
-    const result = await getProjectTasksService(projectId, req.user.id);
+  return res.status(result.statusCode).json({
+    success: true,
+    tasks: result.tasks,
+    message: result.message,
+  });
+});
 
-    if (!result.success) {
-      return res.status(result.statusCode).json({
-        success: false,
-        message: result.message,
-      });
-    }
+export const getSingleTaskController = asyncHandler(async (req, res) => {
+  const { taskId } = req.params;
 
-    return res.status(result.statusCode).json({
-      success: true,
-      tasks: result.tasks,
-      message: result.message,
-    });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      error: error.message,
-      message: "error inside get project tasks controller",
-    });
-  }
-};
+  const result = await getSingleTaskService(taskId, req.user.id);
 
-export const getSingleTaskController = async (req, res) => {
-  try {
-    const { taskId } = req.params;
+  return res.status(result.statusCode).json({
+    success: true,
+    task: result.task,
+    message: result.message,
+  });
+});
 
-    const result = await getSingleTaskService(taskId, req.user.id);
+export const updateTaskController = asyncHandler(async (req, res) => {
+  const { taskId } = req.params;
 
-    if (!result.success) {
-      return res.status(result.statusCode).json({
-        success: false,
-        message: result.message,
-      });
-    }
+  const updateData = req.body;
 
-    return res.status(result.statusCode).json({
-      success: true,
-      task: result.task,
-      message: result.message,
-    });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      error: error.message,
-      message: "error inside get single task controller",
-    });
-  }
-};
+  const result = await updateTaskService(taskId, updateData, req.user.id);
 
-export const updateTaskController = async (req, res) => {
-  try {
-    const { taskId } = req.params;
+  return res.status(result.statusCode).json({
+    success: true,
+    task: result.task,
+    message: result.message,
+  });
+});
 
-    const updateData = req.body;
+export const updateTaskStatusController = asyncHandler(async (req, res) => {
+  const { taskId } = req.params;
 
-    const result = await updateTaskService(taskId, updateData, req.user.id);
+  const { status } = req.body;
 
-    if (!result.success) {
-      return res.status(result.statusCode).json({
-        success: false,
-        message: result.message,
-      });
-    }
+  const result = await updateTaskStatusService(taskId, status, req.user.id);
 
-    return res.status(result.statusCode).json({
-      success: true,
-      task: result.task,
-      message: result.message,
-    });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      error: error.message,
-      message: "error inside update task controller",
-    });
-  }
-};
+  return res.status(result.statusCode).json({
+    success: true,
+    task: result.task,
+    message: result.message,
+  });
+});
 
-export const updateTaskStatusController =
-  async (req, res) => {
-    try {
-      const { taskId } =
-        req.params;
+export const assignTaskController = asyncHandler(async (req, res) => {
+  const { taskId } = req.params;
 
-      const { status } =
-        req.body;
+  const { membershipId } = req.body;
 
-      const result =
-        await updateTaskStatusService(
-          taskId,
-          status,
-          req.user.id
-        );
+  const result = await assignTaskService(taskId, membershipId, req.user.id);
 
-      if (!result.success) {
-        return res.status(result.statusCode).json({
-          success: false,
-          message: result.message,
-        });
-      }
+  return res.status(result.statusCode).json({
+    success: true,
+    task: result.task,
+    message: result.message,
+  });
+});
 
-      return res.status(result.statusCode).json({
-        success: true,
-        task: result.task,
-        message: result.message,
-      });
-    } catch (error) {
-      return res.status(500).json({
-        success: false,
-        error: error.message,
-        message:
-          "error inside update task status controller",
-      });
-    }
-  };
+export const deleteTaskController = asyncHandler(async (req, res) => {
+  const { taskId } = req.params;
 
-  export const assignTaskController =
-  async (req, res) => {
-    try {
-      const { taskId } =
-        req.params;
+  const result = await deleteTaskService(taskId, req.user.id);
 
-      const { membershipId } =
-        req.body;
-
-      const result =
-        await assignTaskService(
-          taskId,
-          membershipId,
-          req.user.id
-        );
-
-      if (!result.success) {
-        return res.status(result.statusCode).json({
-          success: false,
-          message: result.message,
-        });
-      }
-
-      return res.status(result.statusCode).json({
-        success: true,
-        task: result.task,
-        message: result.message,
-      });
-    } catch (error) {
-      return res.status(500).json({
-        success: false,
-        error: error.message,
-        message:
-          "error inside assign task controller",
-      });
-    }
-  };
-
-  export const deleteTaskController =
-  async (req, res) => {
-    try {
-      const { taskId } =
-        req.params;
-
-      const result =
-        await deleteTaskService(
-          taskId,
-          req.user.id
-        );
-
-      if (!result.success) {
-        return res.status(result.statusCode).json({
-          success: false,
-          message: result.message,
-        });
-      }
-
-      return res.status(result.statusCode).json({
-        success: true,
-        message: result.message,
-      });
-    } catch (error) {
-      return res.status(500).json({
-        success: false,
-        error: error.message,
-        message:
-          "error inside delete task controller",
-      });
-    }
-  };
+  return res.status(result.statusCode).json({
+    success: true,
+    message: result.message,
+  });
+});

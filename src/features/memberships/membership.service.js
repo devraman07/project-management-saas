@@ -1,5 +1,7 @@
 import { AuthorizationError } from "../../errors/AuthorizationError.js";
+import { conflictError } from "../../errors/conflictError.js";
 import { NotFoundError } from "../../errors/NotFoundError.js";
+import { ValidationError } from "../../errors/ValidationError.js";
 import { logger } from "../../shared/logger/logger.js";
 import { userrepo } from "../users/users.repoitory.js";
 import { membershipRepo } from "./membership.repository.js";
@@ -11,10 +13,14 @@ export const getMemberService = async (organizationId) => {
     throw new NotFoundError("members not found");
   }
 
+  logger.info({
+    members : members
+  }, "members found");
+
   return {
     success: true,
     statusCode: 200,
-    members,
+    members : members,
     message: "all members for this organization",
   };
 };
@@ -25,6 +31,10 @@ export const getMyMbershipService = async (user) => {
   if (memberships.length === 0) {
     throw new NotFoundError("No membership found for this user");
   }
+
+  logger.info({
+    memberships : memberships
+  }, "memberships found");
 
   return {
     success: true,
@@ -71,35 +81,22 @@ export const updateMemberRoleService = async (
   const membership = await membershipRepo.findById(undefined, membershipId);
 
   if (!membership) {
-    return {
-      success: false,
-      statusCode: 404,
-      message: "membership not found",
-    };
+   throw new NotFoundError("membership not found");
   }
 
   if (membership.organizationId !== organizationId) {
-    return {
-      success: false,
-      statusCode: 403,
-      message: "membership does not belong to this organization",
-    };
+   logger.warn("membership does not belong to this organization");
+   throw new AuthorizationError("membership does not belong to this organization");
   }
 
   if (membership.role === "OWNER") {
-    return {
-      success: false,
-      statusCode: 403,
-      message: "owner role cannot be changed",
-    };
+    logger.warn("owner role cannot be changed");
+    throw new AuthorizationError("owner role cannot be changed");
   }
 
   if (role === "OWNER") {
-    return {
-      success: false,
-      statusCode: 403,
-      message: "use transfer ownership route instead",
-    };
+    logger.warn("use transfer ownership route instead");
+    throw new AuthorizationError("use transfer ownership route instead");
   }
 
   const updatedMembership = await membershipRepo.updateRole(
@@ -107,6 +104,10 @@ export const updateMemberRoleService = async (
     membershipId,
     role,
   );
+
+  logger.info({
+    membership : updatedMembership
+  }, "member role updated successsfully");
 
   return {
     success: true,
@@ -125,19 +126,12 @@ export const addMemberService = async (
   const user = await userrepo.findByEmail(email);
 
   if (!user) {
-    return {
-      success: false,
-      statusCode: 404,
-      message: "user not found",
-    };
+    throw new NotFoundError("user not found");
   }
 
   if (user.id === ownerId) {
-    return {
-      success: false,
-      statusCode: 400,
-      message: "owner is already part of this organization",
-    };
+    logger.warn("owner is already part of this organization");
+    throw new ValidationError("owner is already part of this organization");
   }
 
   const existingMembership = await membershipRepo.findAllByUserAndOrg(
@@ -147,19 +141,12 @@ export const addMemberService = async (
   );
 
   if (existingMembership) {
-    return {
-      success: false,
-      statusCode: 409,
-      message: "user already belongs to this organization",
-    };
+    throw new conflictError("user already belongs to this organization");
   }
 
   if (role === "OWNER") {
-    return {
-      success: false,
-      statusCode: 403,
-      message: "owner role cannot be assigned directly",
-    };
+    logger.warn("owner role cannot be assigned directly");
+   throw new AuthorizationError("owner role cannot be assigned directly");
   }
 
   const membership = await membershipRepo.createMembership(undefined, {
@@ -168,6 +155,11 @@ export const addMemberService = async (
     role,
     invitedBy: ownerId,
   });
+
+
+  logger.info({
+    membership : membership,
+  }, "member added successfully");
 
   return {
     success: true,
@@ -185,41 +177,32 @@ export const removeMemberService = async (
   const membership = await membershipRepo.findById(undefined, membershipId);
 
   if (!membership) {
-    return {
-      success: false,
-      statusCode: 404,
-      message: "membership not found",
-    };
+    throw new NotFoundError("membership not found");
   }
 
-  // ensure target belongs to same organization
+
   if (membership.organizationId !== organizationId) {
-    return {
-      success: false,
-      statusCode: 403,
-      message: "membership does not belong to this organization",
-    };
+    logger.warn("membership does not belong to this organization");
+    throw new AuthorizationError("membership does not belong to this organization");
   }
 
-  // owner cannot be removed
+  
   if (membership.role === "OWNER") {
-    return {
-      success: false,
-      statusCode: 403,
-      message: "owner cannot be removed",
-    };
+   logger.warn("owner cannot be removed");
+   throw new AuthorizationError("owner cannot be removed");
   }
 
-  // owner cannot remove himself here
+ 
   if (membership.userId === currentUserId) {
-    return {
-      success: false,
-      statusCode: 400,
-      message: "use leave organization route instead",
-    };
+   logger.warn("use leave organization route instead");
+   throw new ValidationError("use leave organization route instead");
   }
 
   await membershipRepo.delete(undefined, membershipId);
+
+  logger.info({
+    membership : membershipId
+  }, "member removed successfully");
 
   return {
     success: true,

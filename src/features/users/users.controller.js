@@ -1,3 +1,4 @@
+import { asyncHandler } from "../../shared/utils/asyncHandler.js";
 import {
   deleteUserService,
   fetchUserProfileService,
@@ -5,105 +6,46 @@ import {
   updateUserservice,
 } from "./users.service.js";
 
-export const getusersController = (req, res) => {
-  try {
-    const result = getallUsersService();
+export const getusersController = asyncHandler(async (req, res) => {
+  const result = await getallUsersService();
 
-    if (!result.success) {
-      return res.status(500).json({
-        success: false,
-        error: result.message,
-      });
-    }
+  return res.status(200).json({
+    success: true,
+    users: result.users,
+  });
+});
 
-    return res.status(200).json({
-      success: true,
-      users: result.users,
-    });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      error: error.message,
-    });
-  }
-};
+export const profileController = asyncHandler(async (req, res) => {
+  const id = req.user.id;
 
-export const profileController = (req, res) => {
-  try {
-    const id = req.user.id;
+  const result = fetchUserProfileService(id);
 
-    const result = fetchUserProfileService(id);
+  return res.status(200).json({
+    success: true,
+    uerProfile: result.user,
+    message: "user found",
+  });
+});
 
-    if (!result.success) {
-      return res.status(result.statusCode).json({
-        success: false,
-        message: result.message,
-      });
-    }
+export const updateUserController = asyncHandler(async (req, res) => {
+  const targetuserId = req.params.id;
+  const updateData = req.body;
 
-    return res.status(200).json({
-      success: true,
-      uerProfile: result.user,
-      message: "user found",
-    });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      error: error.message,
-      data: null,
-    });
-  }
-};
+  const result = updateUserservice(targetuserId, updateData);
 
-export const updateUserController = (req, res) => {
-  try {
-    const targetuserId = req.params.id;
-    const updateData = req.body;
+  return res.status(200).json({
+    success: true,
+    user: result.user,
+    message: result.message,
+  });
+});
+export const deleteUserController = asyncHandler(async (req, res) => {
+  const targetUserId = req.params.id;
 
-    const result = updateUserservice(targetuserId, updateData);
+  const result = deleteUserService(targetUserId);
 
-    if (!result.success) {
-      return res.status(result.statuscode).json({
-        success: false,
-        message: result.message,
-      });
-    }
-
-    return res.status(200).json({
-      success: true,
-      user: result.user,
-      message: result.message,
-    });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      error: error.message,
-      message: "error in update user controller",
-    });
-  }
-};
-
-export const deleteUserController = (req, res) => {
-  try {
-    const targetUserId = req.params.id;
-
-    const result = deleteUserService(targetUserId);
-
-    if (!result.success) {
-      return res.status(result.statusCode).json({
-        success: false,
-        message: result.message,
-      });
-    }
-
-    return res.status(200).json({
-      success: true,
-      message: result.message,
-    });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: "Internal server error in delete user controller",
-    });
-  }
-};
+  return res.status(200).json({
+    success: true,
+    message: result.message,
+  });
+});

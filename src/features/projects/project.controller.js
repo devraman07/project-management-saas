@@ -1,3 +1,4 @@
+import { asyncHandler } from "../../shared/utils/asyncHandler.js";
 import {
   archiveprojectService,
   createProjectService,
@@ -5,182 +6,101 @@ import {
   getSingleProjectService,
   updateProjectService,
   updateProjectStatusService,
-} from "./projectService.js";
+} from "./project.service.js";
 
-export const createProjectController = async (req, res) => {
-  try {
-    const { organizationId } = req.params;
+export const createProjectController = asyncHandler(async (req, res) => {
+  const { organizationId } = req.params;
 
-    const { projectData } = req.body;
+  const { projectData } = req.body;
 
-    const result = await createProjectService(
-      organizationId,
-      projectData,
-      req.user,
-    );
+  const result = await createProjectService(
+    organizationId,
+    projectData,
+    req.user,
+  );
 
-    if (!result.success) {
-      return res.status(result.statusCode).json({
-        success: false,
-        message: result.message,
-      });
-    }
+  return res.status(result.statusCode).json({
+    success: true,
+    project: result.project,
+    message: result.message,
+  });
+});
 
+export const getProjectsController = asyncHandler(async (req, res) => {
+  const { organizationId } = req.params;
+
+  const result = await getAllprojectsByOrganizationService(organizationId);
+
+  if (!result.success) {
     return res.status(result.statusCode).json({
-      success: true,
-      project: result.project,
+      success: false,
       message: result.message,
     });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      error: error.message,
-      message: "error in add project controller",
-    });
   }
-};
 
-export const getProjectsController = async (req, res) => {
-  try {
-    const { organizationId } = req.params;
+  return res.status(result.statusCode).json({
+    success: true,
+    projects: result.projects,
+    message: result.message,
+  });
+});
 
-    const result = await getAllprojectsByOrganizationService(organizationId);
+export const getSingleProjectController = asyncHandler(async (req, res) => {
+  const { projectId } = req.params;
+  const userId = req.user.id;
 
-    if (!result.success) {
-      return res.status(result.statusCode).json({
-        success: false,
-        message: result.message,
-      });
-    }
+  const result = await getSingleProjectService(userId, projectId);
 
-    return res.status(result.statusCode).json({
-      success: true,
-      projects: result.projects,
-      message: result.message,
-    });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      error: error.message,
-      message: "error in get projects by organization controller",
-    });
-  }
-};
+  return res.status(result.statusCode).json({
+    success: true,
+    project: result.project,
+    message: result.message,
+  });
+});
 
-export const getSingleProjectController = async (req, res) => {
-  try {
-    const { projectId } = req.params;
-    const userId = req.user.id;
+export const updateProjectController = asyncHandler(async (req, res) => {
+  const { projectId } = req.params;
 
-    const result = await getSingleProjectService(userId, projectId);
-    if (!result.success) {
-      return res.status(result.statusCode).json({
-        success: false,
-        message: result.message,
-      });
-    }
+  const updateData = req.body;
 
-    return res.status(result.statusCode).json({
-      success: true,
-      project: result.project,
-      message: result.message,
-    });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      error: error.message,
-      message: "error in get project by id controller",
-    });
-  }
-};
+  const userId = req.user.id;
 
-export const updateProjectController = async (req, res) => {
-  try {
-    const { projectId } = req.params;
+  const result = await updateProjectService(projectId, updateData, userId);
 
-    const updateData = req.body;
+  return res.status(result.statusCode).json({
+    success: true,
+    project: result.project,
+    message: result.message,
+  });
+});
 
-    const userId = req.user.id;
+export const updateProjectStatusController = asyncHandler(async (req, res) => {
+  const { projectId } = req.params;
 
-    const result = await updateProjectService(projectId, updateData, userId);
+  const { status } = req.body;
 
-    if (!result.success) {
-      return res.status(result.statusCode).json({
-        success: false,
-        message: result.message,
-      });
-    }
+  const result = await updateProjectStatusService(
+    projectId,
+    status,
+    req.user.id,
+  );
 
-    return res.status(result.statusCode).json({
-      success: true,
-      project: result.project,
-      message: result.message,
-    });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      error: error.message,
-      message: "error in update project controller",
-    });
-  }
-};
+  return res.status(result.statusCode).json({
+    success: true,
+    project: result.project,
+    message: result.message,
+  });
+});
 
-export const updateProjectStatusController = async (req, res) => {
-  try {
-    const { projectId } = req.params;
+export const archiveprojectController = asyncHandler(async (req, res) => {
+  const { projectId } = req.params;
 
-    const { status } = req.body;
+  const userId = req.user.id;
 
-    const result = await updateProjectStatusService(
-      projectId,
-      status,
-      req.user.id,
-    );
+  const result = await archiveprojectService(projectId, userId);
 
-    if (!result.success) {
-      return res.status(result.statusCode).json({
-        success: false,
-        message: result.message,
-      });
-    }
-
-    return res.status(result.statusCode).json({
-      success: true,
-      project: result.project,
-      message: result.message,
-    });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      error: error.message,
-      message: "error inside update project status controller",
-    });
-  }
-};
-
-export const archiveprojectController = async (req, res) => {
-  try {
-    const { projectId } = req.params;
-
-    const userId = req.user.id;
-
-    const result = await archiveprojectService(projectId, userId);
-    if (!result.success) {
-      return res.status(result.statusCode).json({
-        success: false,
-        message: result.message,
-      });
-    }
-
-    return res.status(result.statusCode).json({
-      success: true,
-      message: result.message,
-    });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      error: error.message,
-      message: "error inside delete project status controller",
-    });
-  }
-};
+  return res.status(result.statusCode).json({
+    success: true,
+    message: result.message,
+  });
+});
