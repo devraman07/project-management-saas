@@ -1,3 +1,4 @@
+import { AuthorizationError } from "../errors/AuthorizationError";
 
 
 export const canManageProjectMiddleware = (req, res, next) => {
@@ -11,10 +12,7 @@ export const canManageProjectMiddleware = (req, res, next) => {
 
 
     if(!allowedRoles.includes(userRole)) {
-        return res.status(403).json({
-            success : false,
-            message : "not allowed to create project",
-        });
+       throw new AuthorizationError("not allowed to create project");
     }
     next();
     } catch (error) {

@@ -1,3 +1,4 @@
+import { AuthorizationError } from "../errors/AuthorizationError.js";
 import { membershipRepo } from "../features/memberships/membership.repository.js";
 
 export const checkIsOrgMember = async (req, res, next) => {
@@ -13,11 +14,7 @@ export const checkIsOrgMember = async (req, res, next) => {
    
 
     if (!memberShip) {
-      return res.status(403).json({
-        success: false,
-        message: "not a member",
-
-      });
+      throw new AuthorizationError("not a member");
     }
 
     req.membership = memberShip;

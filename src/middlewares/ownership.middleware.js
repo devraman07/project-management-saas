@@ -1,3 +1,5 @@
+import { AuthorizationError } from "../errors/AuthorizationError";
+
 export const ownerShipCheck = (req , res , next) => {
     try {
         
@@ -5,10 +7,7 @@ export const ownerShipCheck = (req , res , next) => {
         const targetUserId = req.params.id;
 
         if(currUserId !== targetUserId) {
-            return res.status(403).json({
-                success : false,
-                message : "you can only access your own account",
-            });
+            throw new AuthorizationError("you can only access your own account");
         }
 
         next();

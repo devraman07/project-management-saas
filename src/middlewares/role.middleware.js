@@ -1,3 +1,5 @@
+import { AuthorizationError } from "../errors/AuthorizationError";
+
 export const roleMiddleware = (...allowedroles) => {
   return (req, res, next) => {
     try {
@@ -5,10 +7,7 @@ export const roleMiddleware = (...allowedroles) => {
       const isAllowed = allowedroles.includes(userRole);
 
       if (!isAllowed) {
-        return res.status(403).json({
-          success: false,
-          message: "Access denied",
-        });
+        throw new AuthorizationError("Access denied");
       }
 
       next();

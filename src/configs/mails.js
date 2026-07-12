@@ -1,6 +1,7 @@
 
 
 import nodemailer from "nodemailer";
+import { logger } from "../shared/logger/logger.js";
 
 
 export const transporter = nodemailer.createTransport({
@@ -10,3 +11,7 @@ export const transporter = nodemailer.createTransport({
         pass : process.env.MAIL_PASS,
     },
 });
+
+if(!transporter) {
+   logger.error("mail config failed");
+}

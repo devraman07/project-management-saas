@@ -1,4 +1,5 @@
 import jwt from "jsonwebtoken";
+import { AuthenticationError } from "../errors/AuthenticationError";
 
 
 export const authMiddleware = (req, res, next) => {
@@ -6,10 +7,7 @@ export const authMiddleware = (req, res, next) => {
     const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith("Bearer")) {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid Token",
-      });
+      throw new AuthenticationError("invalid token");
     }
 
     const token = authHeader.split(" ")[1];

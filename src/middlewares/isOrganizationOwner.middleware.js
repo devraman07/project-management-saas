@@ -1,3 +1,5 @@
+import { AuthorizationError } from "../errors/AuthorizationError.js";
+import { NotFoundError } from "../errors/NotFoundError.js";
 import { organizationRepo } from "../features/organizations/organizations.repository.js";
 
 export const isOrganizationOwner = async (
@@ -15,20 +17,13 @@ export const isOrganizationOwner = async (
       );
 
     if (!organization) {
-      return res.status(404).json({
-        success: false,
-        message: "organization not found",
-      });
+     throw new NotFoundError("organization not found");
     }
 
     if (
       organization.createdBy !== req.user.id
     ) {
-      return res.status(403).json({
-        success: false,
-        message:
-          "only organization owner can perform this action",
-      });
+      throw new AuthorizationError("only organization owner can perform this action");
     }
 
     req.organization = organization;

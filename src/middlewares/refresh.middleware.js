@@ -1,14 +1,12 @@
 import jwt from "jsonwebtoken";
+import { AuthenticationError } from "../errors/AuthenticationError";
 
 export const refreshMiddleware = (req, res, next) => {
   try {
     const { refreshToken } = req.body;
 
     if (!refreshToken) {
-      return res.status(401).json({
-        success: false,
-        message: "Refresh token missing",
-      });
+      throw new AuthenticationError("Refresh token missing");
     }
 
     const decoded = jwt.verify(

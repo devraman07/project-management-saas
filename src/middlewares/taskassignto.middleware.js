@@ -1,4 +1,6 @@
 import { tasks } from "../data/tasks.js";
+import { AuthorizationError } from "../errors/AuthorizationError.js";
+import { NotFoundError } from "../errors/NotFoundError.js";
 
 export const taskAssignedMiddleware = (req, res, next) => {
   try {
@@ -8,17 +10,11 @@ export const taskAssignedMiddleware = (req, res, next) => {
     const task = tasks.find((task) => task.id === taskId);
 
     if (!task) {
-      return res.status(404).json({
-        success: false,
-        messge: " tak not found",
-      });
+      throw new NotFoundError("task not found");
     }
 
     if (task.assignedTo !== currUserId) {
-      return res.status(403).json({
-        success: false,
-        message: "not assigne to this task",
-      });
+      throw new AuthorizationError("not assigne to this task");
     }
 
     req.task = task;
