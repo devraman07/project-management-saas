@@ -85,6 +85,13 @@
       "when": 1782772125632,
       "tag": "0011_ordinary_vanisher",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1783896629798,
+      "tag": "0012_dusty_catseye",
+      "breakpoints": true
     }
   ]
 }

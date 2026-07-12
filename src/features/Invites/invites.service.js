@@ -51,7 +51,7 @@ export const createInviteService = async (
 
   const invite =
     await InviteRepo.create(undefined, {
-      organizationId,
+      organizationId, 
       invitedEmail: email,
       roleToAssign: role,
       token,
@@ -68,6 +68,25 @@ export const createInviteService = async (
     organizationId,
     role,
   });
+
+  await logActivity({
+
+    organizationId : organizationId,
+
+    actorMembershipId : user.id,
+
+    action: "INVITE_SENT",
+
+    entityType: "INVITE",
+
+    entityId: invite.id,
+
+    metadata: {
+        email: invite.invitedEmail,
+        role: invite.roleToAssign,
+    }
+
+});
 
   logger.info({
     invite : invite

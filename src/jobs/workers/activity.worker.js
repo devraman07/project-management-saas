@@ -1,65 +1,41 @@
-import { Worker } from "bullmq"
-import { logger } from "../../shared/logger/logger.js"
+import { Worker } from "bullmq";
+import { logger } from "../../shared/logger/logger.js";
 import { createActivityService } from "../../features/activity/activity.service.js";
 import { redisConnection } from "../../configs/redis.js";
 
+console.log("🚀 Activity Worker Started");
 
-export const activityWorker = new Worker("activity", 
+export const activityWorker = new Worker(
+  "activity",
+  async (job) => {
+    try {
+      logger.info(
+        {
+          jobId: job.id,
+          action: job.name,
+        },
+        "Processing activity job"
+      );
 
-    async(job) => {
-        logger.info(
+      switch (job.name) {
+        case "activity-log":
+          await createActivityService(job.data);
+          break;
+
+        default:
+          logger.warn(
             {
-                jobId : job.id,
-                action : job.name,
+              jobName: job.name,
             },
-            "processing activity job"
-        );
-
-        switch (job.name) {
-            case "activity-log" : 
-            await createActivityService(job.data);
-            break;
-
-            default : 
-            logger.warn(
-                {
-                    jobName : job.name,
-                }, "unkown activity job"
-            );
-        }
-    },
-    {
-        connection : redisConnection,
+            "Unknown activity job"
+          );
+      }
+    } catch (err) {
+      console.error("🔥 Worker Error:", err);
+      throw err; 
     }
- );
-
-
-activityWorker.on(
-  "completed",
-  (job) => {
-
-    logger.info(
-      {
-        jobId: job.id,
-      },
-      "Activity job completed"
-    );
-
-  }
-);
-
-
-activityWorker.on(
-  "failed",
-  (job, err) => {
-
-    logger.error(
-      {
-        jobId: job?.id,
-        err,
-      },
-      "Activity job failed"
-    );
-
+  },
+  {
+    connection: redisConnection,
   }
 );

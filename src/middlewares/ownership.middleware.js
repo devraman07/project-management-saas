@@ -1,4 +1,4 @@
-import { AuthorizationError } from "../errors/AuthorizationError";
+import { AuthorizationError } from "../errors/AuthorizationError.js";
 
 export const ownerShipCheck = (req , res , next) => {
     try {

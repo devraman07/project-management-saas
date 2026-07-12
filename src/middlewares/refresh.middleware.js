@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken";
-import { AuthenticationError } from "../errors/AuthenticationError";
+import { AuthenticationError } from "../errors/AuthenticationError.js";
 
 export const refreshMiddleware = (req, res, next) => {
   try {

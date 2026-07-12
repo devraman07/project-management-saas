@@ -45,6 +45,23 @@ export const createTaskService = async (projectId, taskData, userId) => {
     },
     "new task created",
   );
+  await logActivity({
+
+    organizationId : project.organizationId,
+
+    actorMembershipId  : userId,
+
+    action: "TASK_CREATED",
+
+    entityType: "TASK",
+
+    entityId: newTask.id,
+
+    metadata: {
+        taskTitle: newTask.title,
+    }
+
+});
   return {
     success: true,
     statusCode: 201,

@@ -1,39 +1,42 @@
-import { db } from "../../configs/db.js"
+import { db } from "../../configs/db.js";
+import { conflictError } from "../../errors/conflictError.js";
+
 import { membershipRepo } from "../memberships/membership.repository.js";
-import { organizationRepo } from "./organizations.repository.js"
+import { organizationRepo } from "./organizations.repository.js";
 
+export const createOrganizationTransaction = async (
+  organizationData,
+  user,
+) => {
+  return await db.transaction(async (tx) => {
+    const existingOrganization =
+      await organizationRepo.findByNameAndCreator(
+        tx,
+        organizationData.name,
+        user.id,
+      );
 
-export const createOrganizationTransaction = async (organizationData, user) => {
-    return await db.transaction(async (tx) => {
+    if (existingOrganization) {
+      throw new conflictError("Organization already exists");
+    }
 
-        const existingOrganizations = await organizationRepo.findByNameAndCreator(
-            tx,
-            organizationData.name,
-            user.id
-        );
+    const organization = await organizationRepo.create(tx, {
+      name: organizationData.name,
+      createdBy: user.id,
+    });
 
-        if(existingOrganizations) {
-            throw new Error("Organization already exists");
-        }
+    const ownerMembership =
+      await membershipRepo.createMembership(tx, {
+        userId: user.id,
+        organizationId: organization.id,
+        role: "OWNER",
+        status: "ACTIVE",
+        invitedBy: null,
+      });
 
-        const newOrganization = await organizationRepo.create(tx,
-            {
-                name : organizationData.name,
-                createdBy : user.id,
-            }
-        );
-
-        await membershipRepo.createMembership(
-            tx,
-            {
-                userId : user.id,
-                organizationId : newOrganization.id,
-                role : "OWNER",
-                status : "ACTIVE",
-                invitedBy : null,
-            }
-        );
-
-        return newOrganization;
-    })
-}
+    return {
+      organization,
+      ownerMembership,
+    };
+  });
+};

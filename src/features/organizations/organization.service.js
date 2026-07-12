@@ -6,23 +6,41 @@ import { createOrganizationTransaction } from "./organization.transaction.js";
 import { organizationRepo } from "./organizations.repository.js";
 
 export const createOrganizationService = async (organizationData, user) => {
-  const organization = await createOrganizationTransaction(
+  const { organization, ownerMembership } = await createOrganizationTransaction(
     organizationData,
     user,
   );
 
+  await logActivity({
+    organizationId: organization.id,
+
+    actorMembershipId: ownerMembership.id,
+
+    action: "ORGANIZATION_CREATED",
+
+    entityType: "ORGANIZATION",
+
+    entityId: organization.id,
+
+    metadata: {
+      organizationName: organization.name,
+    },
+  });
+
   logger.info(
     {
-      organization: organization,
+      organizationId: organization.id,
+      ownerMembershipId: ownerMembership.id,
+      ownerUserId: user.id,
     },
-    "organization created",
+    "Organization created successfully",
   );
 
   return {
     success: true,
     statusCode: 201,
     organization,
-    message: "organization created successfully",
+    message: "Organization created successfully",
   };
 };
 
@@ -32,10 +50,13 @@ export const getOrgService = async (user) => {
   if (result.length === 0) {
     throw new NotFoundError("organization not found");
   }
-  
-  logger.info({
-    result : result
-  }, "get organization route hit successfull");
+
+  logger.info(
+    {
+      result: result,
+    },
+    "get organization route hit successfull",
+  );
   return {
     success: true,
     statusCode: 200,
@@ -50,10 +71,13 @@ export const singleOrgService = async (id) => {
   if (!result) {
     throw new NotFoundError("organization not found");
   }
-  
-  logger.info({
-    org : result
-  }, "single organization route hit successfully");
+
+  logger.info(
+    {
+      org: result,
+    },
+    "single organization route hit successfully",
+  );
   return {
     success: true,
     statusCode: 200,
@@ -66,7 +90,7 @@ export const updateOrgService = async (id, organizationData, user) => {
   const organization = await organizationRepo.findById(undefined, id);
 
   if (!organization) {
-    throw new ValidationError("using wrong id")
+    throw new ValidationError("using wrong id");
   }
 
   const Duplicate = await organizationRepo.findDuplicateForUpdate(
@@ -86,9 +110,12 @@ export const updateOrgService = async (id, organizationData, user) => {
     organizationData,
   );
 
-  logger.info({
-    org : updatedOrg
-  }, "organization updated successfully");
+  logger.info(
+    {
+      org: updatedOrg,
+    },
+    "organization updated successfully",
+  );
 
   return {
     success: true,
@@ -107,10 +134,12 @@ export const deleteOrgService = async (id) => {
 
   const deletedOrg = await organizationRepo.softDelete(undefined, id);
 
-
-  logger.info({
-    org : deletedOrg
-  }, "organization deleted successfully");
+  logger.info(
+    {
+      org: deletedOrg,
+    },
+    "organization deleted successfully",
+  );
 
   return {
     success: true,

@@ -2,7 +2,7 @@ import { Queue } from "bullmq";
 import { redisConnection } from "../../configs/redis.js";
 
 
-export const activityQueue = new Queue("activity-logs", {
+export const activityQueue = new Queue("activity", {
     connection : redisConnection,
 
     defaultJobOptions : {

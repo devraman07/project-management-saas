@@ -33,6 +33,24 @@ export const createProjectService = async (
     "project created successfully",
   );
 
+  await logActivity({
+
+    organizationId : organizationId,
+
+    actorMembershipId : user.id,
+
+    action: "PROJECT_CREATED",
+
+    entityType: "PROJECT",
+
+    entityId: newproject.id,
+
+    metadata: {
+        projectName: newproject.name,
+    }
+
+});
+
   return {
     success: true,
     statusCode: 201,
