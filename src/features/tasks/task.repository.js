@@ -49,8 +49,8 @@ export const taskRepo = {
     return updatedTask;
   },
 
-  async assign(executor = db, taskId, membershipId) {
-    const [updatedTask] = await executor
+  async assign(tx = db, taskId, membershipId) {
+    const [updatedTask] = await tx
       .update(tasks)
       .set({
         assignedTo: membershipId,

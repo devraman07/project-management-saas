@@ -2,7 +2,7 @@ import { NotFoundError } from "../../errors/NotFoundError.js";
 import { ValidationError } from "../../errors/ValidationError.js";
 import { logger } from "../../shared/logger/logger.js";
 import { logActivity } from "../../shared/utils/activity/Logger.js";
-import { createOrganizationTransaction } from "./organization.transaction.js";
+import { createOrganizationTransaction } from "../../transactions/organization.transaction.js";
 import { organizationRepo } from "./organizations.repository.js";
 
 export const createOrganizationService = async (organizationData, user) => {

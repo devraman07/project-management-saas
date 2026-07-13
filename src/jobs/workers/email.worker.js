@@ -5,6 +5,9 @@ import { Worker } from "bullmq";
 import { redisConnection } from "../../configs/redis.js";
 import { sendMail } from "../../shared/utils/sendMail.js";
 
+
+console.log("email worker started");
+
 export const emailWorker = new Worker(
   "email",
   async (job) => {

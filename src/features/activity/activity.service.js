@@ -1,5 +1,6 @@
 import { ValidationError } from "../../errors/ValidationError.js";
 import { logger } from "../../shared/logger/logger.js";
+import { dispatchActivity } from "./activity.dispartcher.js";
 import { activityRepository } from "./activity.repository.js";
 
 export const createActivityService = async ({
@@ -34,6 +35,8 @@ export const createActivityService = async ({
     entityId: entityId,
     metadata: metadata,
   });
+
+  await dispatchActivity(activity);
 
   logger.info(
     {

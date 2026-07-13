@@ -1,55 +1,82 @@
 import { AuthorizationError } from "../../errors/AuthorizationError.js";
 import { NotFoundError } from "../../errors/NotFoundError.js";
 import { logger } from "../../shared/logger/logger.js";
+import { assignTaskTransactions } from "../../transactions/task.transactions.js";
 import { membershipRepo } from "../memberships/membership.repository.js";
 import { ProjectRepo } from "../projects/project.repository.js";
 import { taskRepo } from "./task.repository.js";
 
-export const createTaskService = async (projectId, taskData, userId) => {
-  const project = await ProjectRepo.findById(undefined, projectId);
+export const createTaskService = async (
+  projectId,
+  taskData,
+  userId,
+) => {
+  const project = await ProjectRepo.findById(
+    undefined,
+    projectId,
+  );
 
   if (!project) {
-    throw new NotFoundError("task not found");
+    throw new NotFoundError("Project not found");
   }
 
-  const membership = await membershipRepo.findAllByUserAndOrg(
-    undefined,
-    userId,
-    project.organizationId,
-  );
+  const membership =
+    await membershipRepo.findAllByUserAndOrg(
+      undefined,
+      userId,
+      project.organizationId,
+    );
 
   if (!membership) {
-    logger.warn("not a member of this organization");
-    throw new AuthorizationError("not a member of this organization");
+    logger.warn(
+      {
+        userId,
+        organizationId: project.organizationId,
+      },
+      "User is not a member of this organization",
+    );
+
+    throw new AuthorizationError(
+      "Not a member of this organization",
+    );
   }
 
-  const allowedRoles = ["OWNER", "ADMIN", "PROJECT_MANAGER"];
+  const allowedRoles = [
+    "OWNER",
+    "ADMIN",
+    "PROJECT_MANAGER",
+  ];
 
   if (!allowedRoles.includes(membership.role)) {
-    logger.warn("not allowed to create task");
-    throw new AuthorizationError("not allowed to create task");
+    logger.warn(
+      {
+        membershipId: membership.id,
+        role: membership.role,
+      },
+      "User is not allowed to create tasks",
+    );
+
+    throw new AuthorizationError(
+      "Not allowed to create task",
+    );
   }
 
-  const newTask = await taskRepo.create(undefined, {
-    projectId,
-    title: taskData.title,
-    description: taskData.description,
-    priority: taskData.priority,
-    dueDate: taskData.dueDate,
-    createdBy: membership.id,
-  });
-
-  logger.info(
+  const newTask = await taskRepo.create(
+    undefined,
     {
-      newTask,
+      projectId,
+      title: taskData.title,
+      description: taskData.description,
+      priority: taskData.priority,
+      dueDate: taskData.dueDate,
+      createdBy: membership.id,
     },
-    "new task created",
   );
+
   await logActivity({
+    organizationId: project.organizationId,
 
-    organizationId : project.organizationId,
-
-    actorMembershipId  : userId,
+    actorMembershipId: membership.id,
 
     action: "TASK_CREATED",
 
@@ -58,15 +85,26 @@ export const createTaskService = async (projectId, taskData, userId) => {
     entityId: newTask.id,
 
     metadata: {
-        taskTitle: newTask.title,
-    }
+      taskTitle: newTask.title,
+      projectId: project.id,
+    },
+  });
 
-});
+  logger.info(
+    {
+      taskId: newTask.id,
+      projectId: project.id,
+      organizationId: project.organizationId,
+      createdByMembershipId: membership.id,
+    },
+    "Task created successfully",
+  );
+
   return {
     success: true,
     statusCode: 201,
     task: newTask,
-    message: "task created successfully",
+    message: "Task created successfully",
   };
 };
 
@@ -274,11 +312,11 @@ export const assignTaskService = async (taskId, membershipId, userId) => {
     throw new AuthorizationError("cannot assign task outside organization");
   }
 
-  const updatedTask = await taskRepo.assign(undefined, taskId, membershipId);
+  const updatedTask = await assignTaskTransactions(taskId, membershipId);
 
   logger.info(
     {
-      task: updatedTask,
+      taskId, membershipId
     },
     "task assigned successfully",
   );
