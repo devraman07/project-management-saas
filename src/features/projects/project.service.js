@@ -4,6 +4,7 @@ import { conflictError } from "../../errors/conflictError.js";
 import { logger } from "../../shared/logger/logger.js";
 import { NotFoundError } from "../../errors/NotFoundError.js";
 import { AuthorizationError } from "../../errors/AuthorizationError.js";
+import { logActivity } from "../../shared/utils/activity/Logger.js";
 
 export const createProjectService = async (
   organizationId,

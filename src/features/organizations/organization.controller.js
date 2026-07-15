@@ -7,10 +7,10 @@ import {
   singleOrgService,
   updateOrgService,
 } from "./organization.service.js";
-import { createOrgTransformer } from "./organization.transformer.js";
+
 
 export const createOrgController = asyncHandler(async (req, res) => {
-  const organizationData = createOrgTransformer(req.body);
+  const organizationData = req.body;
 
   const result = await createOrganizationService(organizationData, req.user);
 

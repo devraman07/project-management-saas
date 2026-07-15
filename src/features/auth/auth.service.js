@@ -3,7 +3,8 @@ import {
   generateRefreshToken,
 } from "../../shared/utils/jwt.js";
 import { userrepo } from "../users/users.repoitory.js";
-import { generateHashedpassword as hashToken } from "../../shared/utils/hashedPassword.js";
+import { generateHashedpassword  } from "../../shared/utils/hashedPassword.js";
+import { hashToken } from "../../shared/utils/hashToken.js";
 import { emailQueue } from "../../jobs/queues/email.queue.js";
 import { tokenrepo } from "../../Repositores/token.repository.js";
 import { comparePassword } from "../../shared/utils/comparePassword.js";
@@ -156,9 +157,13 @@ export const profileservice = (userId) => {
     role: user.role,
   };
 
-  logger.info({
-    safeUser : safeUser
-  }, "profile visit");
+  logger.info(
+  {
+    userId: safeUser.id,
+    email: safeUser.email,
+  },
+  "Profile viewed",
+);
 
   return {
     success: true,
@@ -248,7 +253,7 @@ export const logOutService = async (refreshToken) => {
   const storedToken = await tokenrepo.findByTokenHash(hashedToken);
 
   if (!storedToken) {
-    throw new NotFoundError("Token not found");
+    throw new NotFoundError("Token not found in db");
   }
 
   if (storedToken.isRevoked) {

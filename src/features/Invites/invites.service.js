@@ -123,72 +123,103 @@ export const acceptInviteservice = async (token, userId) => {
   const invite = await InviteRepo.findByToken(undefined, token);
 
   if (!invite) {
-    throw new NotFoundError("invite not found");
+    throw new NotFoundError("Invite not found");
   }
 
   if (invite.status !== "PENDING") {
-    logger.warn("invite no longer exists");
-    throw new ValidationError("invite no longer exist");
+    logger.warn(
+      {
+        inviteId: invite.id,
+      },
+      "Invite no longer pending",
+    );
+
+    throw new ValidationError("Invite no longer exists");
   }
 
   if (new Date(invite.expiresAt) < new Date()) {
-    logger.warn("trying with expired invite");
+    logger.warn(
+      {
+        inviteId: invite.id,
+      },
+      "Trying to accept expired invite",
+    );
+
     throw new ValidationError("Invite has expired");
   }
 
   const user = await userrepo.findById(userId);
 
   if (!user) {
-    throw new NotFoundError("user not found");
+    throw new NotFoundError("User not found");
   }
 
   if (user.email !== invite.invitedEmail) {
-    logger.warn("trying with invalid  email id");
+    logger.warn(
+      {
+        userId,
+        inviteId: invite.id,
+      },
+      "Invite email mismatch",
+    );
+
     throw new AuthorizationError(
       "This invite belongs to another email address",
     );
   }
 
-  const existingMembership = await membershipRepo.findAllByUserAndOrg(
-    undefined,
-    user.id,
-    invite.organizationId,
-  );
+  const existingMembership =
+    await membershipRepo.findAllByUserAndOrg(
+      undefined,
+      user.id,
+      invite.organizationId,
+    );
 
   if (existingMembership) {
-    logger.warn("existing member trying to join");
+    logger.warn(
+      {
+        userId,
+        organizationId: invite.organizationId,
+      },
+      "User already belongs to organization",
+    );
+
     throw new conflictError("User is already a member");
   }
 
-  let inviterUserId = null;
+  // ✅ Transaction
+  const {
+    membership,
+    invite: updatedInvite,
+  } = await acceptInviteTransacion({
+    invite,
+    user,
+  });
 
-  if (invite.invitedBy) {
-    const inviterMembership = await membershipRepo.findById(
-      undefined,
-      invite.invitedBy,
-    );
-
-    inviterUserId = inviterMembership?.userId ?? null;
-  }
-
-  const membership = acceptInviteTransacion(invite, user);
-
+  // ✅ Activity
   await logActivity({
-    organizationId: invite.organizationId,
+    organizationId: updatedInvite.organizationId,
+
     actorMembershipId: membership.id,
+
     action: "INVITE_ACCEPTED",
+
     entityType: "INVITE",
-    entityId: invite.id,
+
+    entityId: updatedInvite.id,
+
     metadata: {
-      invitedEmail: invite.invitedEmail,
+      invitedEmail: updatedInvite.invitedEmail,
+      role: updatedInvite.roleToAssign,
     },
   });
 
+  // ✅ Logger
   logger.info(
     {
       membershipId: membership.id,
       organizationId: membership.organizationId,
-      inviteId: invite.id,
+      inviteId: updatedInvite.id,
     },
     "Invite accepted successfully",
   );

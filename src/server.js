@@ -12,6 +12,7 @@ import { inviteRouter } from "./features/Invites/invites.routes.js";
 import "./jobs/workers/email.worker.js";
 import { logger } from "./shared/logger/logger.js";
 import { errorMiddleware } from "./middlewares/error.middleware.js";
+import { notificationRouter } from "./features/notifications/notification.routes.js";
 dotenv.config();
 
 const app = express();
@@ -33,6 +34,7 @@ app.use("/api/v1/organizations", orgRouter);
 app.use("/api/v1/memberships", memberShipRouter);
 app.use("/api/v1/projects", projectRouter);
 app.use("/api/v1/invites", inviteRouter);
+app.use("/api/v1/organizations", notificationRouter);
 
 app.get("/", (req, res) => {
     res.send("Task management api working");

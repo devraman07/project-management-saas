@@ -11,13 +11,11 @@ import {
 export const createProjectController = asyncHandler(async (req, res) => {
   const { organizationId } = req.params;
 
-  const { projectData } = req.body;
-
-  const result = await createProjectService(
-    organizationId,
-    projectData,
-    req.user,
-  );
+ const result = await createProjectService(
+  organizationId,
+  req.body,
+  req.user,
+);
 
   return res.status(result.statusCode).json({
     success: true,

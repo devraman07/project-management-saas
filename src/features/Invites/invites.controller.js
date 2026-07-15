@@ -42,9 +42,5 @@ export const acceptInviteController = asyncHandler(async (req, res) => {
 
   const result = await acceptInviteservice(token, req.user.id);
 
-  return res.status(result.statusCode).json({
-    success: true,
-    membership: result.membership,
-    message: result.message,
-  });
+  return res.status(result.statusCode).json(result);
 });

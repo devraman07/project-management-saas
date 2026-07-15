@@ -1,31 +1,24 @@
 import { AuthorizationError } from "../../errors/AuthorizationError.js";
 import { NotFoundError } from "../../errors/NotFoundError.js";
 import { logger } from "../../shared/logger/logger.js";
+import { logActivity } from "../../shared/utils/activity/Logger.js";
 import { assignTaskTransactions } from "../../transactions/task.transactions.js";
 import { membershipRepo } from "../memberships/membership.repository.js";
 import { ProjectRepo } from "../projects/project.repository.js";
 import { taskRepo } from "./task.repository.js";
 
-export const createTaskService = async (
-  projectId,
-  taskData,
-  userId,
-) => {
-  const project = await ProjectRepo.findById(
-    undefined,
-    projectId,
-  );
+export const createTaskService = async (projectId, taskData, userId) => {
+  const project = await ProjectRepo.findById(undefined, projectId);
 
   if (!project) {
     throw new NotFoundError("Project not found");
   }
 
-  const membership =
-    await membershipRepo.findAllByUserAndOrg(
-      undefined,
-      userId,
-      project.organizationId,
-    );
+  const membership = await membershipRepo.findAllByUserAndOrg(
+    undefined,
+    userId,
+    project.organizationId,
+  );
 
   if (!membership) {
     logger.warn(
@@ -36,16 +29,10 @@ export const createTaskService = async (
       "User is not a member of this organization",
     );
 
-    throw new AuthorizationError(
-      "Not a member of this organization",
-    );
+    throw new AuthorizationError("Not a member of this organization");
   }
 
-  const allowedRoles = [
-    "OWNER",
-    "ADMIN",
-    "PROJECT_MANAGER",
-  ];
+  const allowedRoles = ["OWNER", "ADMIN", "PROJECT_MANAGER"];
 
   if (!allowedRoles.includes(membership.role)) {
     logger.warn(
@@ -56,22 +43,17 @@ export const createTaskService = async (
       "User is not allowed to create tasks",
     );
 
-    throw new AuthorizationError(
-      "Not allowed to create task",
-    );
+    throw new AuthorizationError("Not allowed to create task");
   }
 
-  const newTask = await taskRepo.create(
-    undefined,
-    {
-      projectId,
-      title: taskData.title,
-      description: taskData.description,
-      priority: taskData.priority,
-      dueDate: taskData.dueDate,
-      createdBy: membership.id,
-    },
-  );
+  const newTask = await taskRepo.create(undefined, {
+    projectId,
+    title: taskData.title,
+    description: taskData.description,
+    priority: taskData.priority,
+    dueDate: taskData.dueDate,
+    createdBy: membership.id,
+  });
 
   await logActivity({
     organizationId: project.organizationId,
@@ -314,11 +296,34 @@ export const assignTaskService = async (taskId, membershipId, userId) => {
 
   const updatedTask = await assignTaskTransactions(taskId, membershipId);
 
+  await logActivity({
+    organizationId: project.organizationId,
+
+    actorMembershipId: actorMembership.id,
+
+    action: "TASK_ASSIGNED",
+
+    entityType: "TASK",
+
+    entityId: updatedTask.id,
+
+    metadata: {
+      taskTitle: updatedTask.title,
+
+      assignedMembershipId: targetMembership.id,
+      assignedByMembershipId : actorMembership.id,
+    },
+  });
+
   logger.info(
     {
-      taskId, membershipId
+      taskId: updatedTask.id,
+      projectId: project.id,
+      organizationId: project.organizationId,
+      assignedByMembershipId: actorMembership.id,
+      assignedToMembershipId: targetMembership.id,
     },
-    "task assigned successfully",
+    "Task assigned successfully",
   );
 
   return {

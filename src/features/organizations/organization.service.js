@@ -13,15 +13,10 @@ export const createOrganizationService = async (organizationData, user) => {
 
   await logActivity({
     organizationId: organization.id,
-
     actorMembershipId: ownerMembership.id,
-
     action: "ORGANIZATION_CREATED",
-
     entityType: "ORGANIZATION",
-
     entityId: organization.id,
-
     metadata: {
       organizationName: organization.name,
     },

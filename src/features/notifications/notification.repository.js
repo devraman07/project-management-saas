@@ -66,6 +66,16 @@ export const notificationRepository = {
         )
     );
 
+    
+
     return Number(result.count);
-  }
+  },
+
+  async findById(tx = db, notificationId) {
+       const [notification] = await tx.select().from(notifications).where(
+        eq(notifications.id, notificationId)
+       );
+
+       return notification;
+    }
 };

@@ -6,11 +6,11 @@ import {
   pgEnum,
   foreignKey,
 } from "drizzle-orm/pg-core";
+
 import { sql } from "drizzle-orm";
 
 import { users } from "./users.js";
 import { organizations } from "./organizations.js";
-
 
 export const membershipRoleEnum = pgEnum("membership_role", [
   "OWNER",
@@ -43,16 +43,20 @@ export const memberships = pgTable(
 
     invitedBy: uuid("invited_by"),
 
-    joinedAt: timestamp("joined_at").defaultNow().notNull(),
-    
+    joinedAt: timestamp("joined_at")
+      .defaultNow()
+      .notNull(),
   },
   (table) => ({
-    uniqueMembership: unique().on(table.userId, table.organizationId),
+    uniqueMembership: unique().on(
+      table.userId,
+      table.organizationId,
+    ),
 
     invitedByFk: foreignKey({
-  columns: [table.invitedBy],
-  foreignColumns: [users.id],
-  name: "memberships_invited_by_fk",
-}).onDelete("set null"),
+      columns: [table.invitedBy],
+      foreignColumns: [table.id],   // ✅ memberships.id
+      name: "memberships_invited_by_fk",
+    }).onDelete("set null"),
   }),
 );
