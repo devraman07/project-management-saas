@@ -7,7 +7,7 @@ import { createNotificationService } from "../../features/notifications/notifica
 console.log("🔔 Notification Worker Started");
 
 export const notificationWorker = new Worker(
-  "notification",
+  "notifications",
 
   async (job) => {
     logger.info(

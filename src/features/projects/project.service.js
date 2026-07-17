@@ -10,6 +10,7 @@ export const createProjectService = async (
   organizationId,
   projectData,
   user,
+  memberShip
 ) => {
   const existingProject = await ProjectRepo.findByName(
     undefined,
@@ -38,7 +39,7 @@ export const createProjectService = async (
 
     organizationId : organizationId,
 
-    actorMembershipId : user.id,
+    actorMembershipId : memberShip.id,
 
     action: "PROJECT_CREATED",
 

@@ -18,6 +18,7 @@ export const createInviteService = async (
   role,
   invitedByMembershipId,
 ) => {
+  
   const user = await userrepo.findByEmail(email);
 
   if (user) {
@@ -28,11 +29,12 @@ export const createInviteService = async (
     );
 
     if (existingMembership) {
-      logger.warn("user is already a member");
+      logger.warn("User is already a member");
       throw new conflictError("User is already a member of this organization");
     }
   }
 
+  
   const existingInvite = await InviteRepo.findPendingByEmailAndOrg(
     undefined,
     email,
@@ -40,11 +42,13 @@ export const createInviteService = async (
   );
 
   if (existingInvite) {
-    logger.warn("pneding invite already exists");
+    logger.warn("Pending invite already exists");
     throw new conflictError("Pending invite already exists");
   }
 
+  
   const token = crypto.randomBytes(32).toString("hex");
+
 
   const invite = await InviteRepo.create(undefined, {
     organizationId,
@@ -55,6 +59,7 @@ export const createInviteService = async (
     expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
   });
 
+
   await emailQueue.add("invite-email", {
     email,
     token,
@@ -62,17 +67,13 @@ export const createInviteService = async (
     role,
   });
 
+ 
   await logActivity({
-    organizationId: organizationId,
-
-    actorMembershipId: user.id,
-
+    organizationId,
+    actorMembershipId: invitedByMembershipId,
     action: "INVITE_SENT",
-
     entityType: "INVITE",
-
     entityId: invite.id,
-
     metadata: {
       email: invite.invitedEmail,
       role: invite.roleToAssign,
@@ -81,9 +82,13 @@ export const createInviteService = async (
 
   logger.info(
     {
-      invite: invite,
+      inviteId: invite.id,
+      organizationId,
+      invitedEmail: invite.invitedEmail,
+      role: invite.roleToAssign,
+      invitedByMembershipId,
     },
-    "invite created successfully",
+    "Invite created successfully",
   );
 
   return {
@@ -168,12 +173,11 @@ export const acceptInviteservice = async (token, userId) => {
     );
   }
 
-  const existingMembership =
-    await membershipRepo.findAllByUserAndOrg(
-      undefined,
-      user.id,
-      invite.organizationId,
-    );
+  const existingMembership = await membershipRepo.findAllByUserAndOrg(
+    undefined,
+    user.id,
+    invite.organizationId,
+  );
 
   if (existingMembership) {
     logger.warn(
@@ -188,10 +192,7 @@ export const acceptInviteservice = async (token, userId) => {
   }
 
   // ✅ Transaction
-  const {
-    membership,
-    invite: updatedInvite,
-  } = await acceptInviteTransacion({
+  const { membership, invite: updatedInvite } = await acceptInviteTransacion({
     invite,
     user,
   });

@@ -26,6 +26,7 @@ export const createActivityService = async ({
   if (!entityId) {
     throw new ValidationError("Entity id is required");
   }
+  console.log("1. Validation passed");
 
   const activity = await activityRepository.create(undefined, {
     organizationId: organizationId,
@@ -36,7 +37,12 @@ export const createActivityService = async ({
     metadata: metadata,
   });
 
+  console.log("2. Activity inserted:", activity);
+
   await dispatchActivity(activity);
+
+  console.log("3. Dispatch completed");
+
 
   logger.info(
     {
@@ -48,6 +54,8 @@ export const createActivityService = async ({
     },
     "activity created",
   );
+
+  console.log("4. Service finished");
 
   return {
     activity: activity,

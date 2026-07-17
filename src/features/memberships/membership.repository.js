@@ -15,18 +15,22 @@ export const membershipRepo = {
   },
 
   async findAllByUserAndOrg(executor = db, userId, organizationId) {
-    const membership = await executor
-      .select()
-      .from(memberships)
-      .where(
-        and(
-          eq(memberships.userId, userId),
-          eq(memberships.organizationId, organizationId),
-        ),
-      );
+  console.log({ userId, organizationId });
 
-    return membership[0];
-  },
+  const membershipsFound = await executor
+    .select()
+    .from(memberships)
+    .where(
+      and(
+        eq(memberships.userId, userId),
+        eq(memberships.organizationId, organizationId),
+      ),
+    );
+
+  console.log("Memberships found:", membershipsFound);
+
+  return membershipsFound[0];
+},
 
   async findById(executor = db, membershipId) {
     const membership = await executor

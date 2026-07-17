@@ -5,6 +5,11 @@ export const checkIsOrgMember = async (req, res, next) => {
   try {
     const { organizationId } = req.params;
 
+    console.log({
+  userId: req.user.id,
+  organizationId,
+});
+
     const memberShip = await membershipRepo.findAllByUserAndOrg(
       undefined,
       req.user.id,
