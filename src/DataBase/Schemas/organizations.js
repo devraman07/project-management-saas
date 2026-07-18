@@ -1,5 +1,5 @@
 import { pgTable, uuid, varchar, timestamp, unique } from "drizzle-orm/pg-core";
-import { sql } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import { users } from "./users.js";
 import { boolean } from "drizzle-orm/gel-core";
 
@@ -30,4 +30,15 @@ export const organizations = pgTable(
   (table) => ({
     uniqueOrgPerUser: unique().on(table.createdBy, table.name),
   }),
+);
+
+export const organizationRelations = relations(
+  organizations,
+  ({ many }) => ({
+    memberships: many(memberships),
+
+    projects: many(projects),
+
+    activityLogs: many(activityLogs),
+  })
 );

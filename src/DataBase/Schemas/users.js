@@ -1,4 +1,4 @@
-import { sql } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
   pgTable,
   uuid,
@@ -28,3 +28,10 @@ export const users = pgTable("users", {
     .defaultNow()
     .notNull(),
 });
+
+export const userRelations = relations(
+  users,
+  ({ many }) => ({
+    memberships: many(memberships),
+  })
+);

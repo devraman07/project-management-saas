@@ -7,7 +7,7 @@ import {
   unique,
   pgEnum,
 } from "drizzle-orm/pg-core";
-import { sql } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 
 import { organizations } from "./organizations.js";
 import { memberships } from "./membership.js";
@@ -56,4 +56,20 @@ export const projects = pgTable(
   (table) => ({
     uniqueProjectName: unique().on(table.organizationId, table.name),
   }),
+);
+
+export const projectRelations = relations(
+  projects,
+  ({ one, many }) => ({
+    organization: one(organizations, {
+      fields: [projects.organizationId],
+      references: [organizations.id],
+    }),
+
+    tasks: many(tasks),
+
+    members: many(projectMembers),
+
+    activityLogs: many(activityLogs),
+  })
 );
