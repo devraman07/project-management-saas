@@ -29,6 +29,11 @@ export const activityActionEnum = pgEnum("activity_action", [
   "MEMBER_ADDED",
   "MEMBER_REMOVED",
   "ROLE_CHANGED",
+  
+  
+  "COMMENT_CREATED",
+  "COMMENT_UPDATED",
+  "COMMENT_DELETED"
 ]);
 
 export const entityTypeEnum = pgEnum("entity_type", [
@@ -41,6 +46,7 @@ export const entityTypeEnum = pgEnum("entity_type", [
   "MEMBERSHIP",
 
   "INVITE",
+  "COMMENT",
 ]);
 
 export const activityLogs = pgTable("activity_logs", {
