@@ -1,5 +1,7 @@
 import { AuthorizationError } from "../../errors/AuthorizationError.js";
 import { NotFoundError } from "../../errors/NotFoundError.js";
+import { getCommentContext } from "../../shared/Helpers/getCommentContext.js";
+import { getTaskFromMembership } from "../../shared/Helpers/getMembershipFromTask.js";
 import { logger } from "../../shared/logger/logger.js";
 import { logActivity } from "../../shared/utils/activity/Logger.js";
 import { membershipRepo } from "../memberships/membership.repository.js";
@@ -8,28 +10,10 @@ import { taskRepo } from "../tasks/task.repository.js";
 import { commentsRepo } from "./comments.repository.js";
 
 export const createCommentService = async (taskId, commentData, userId) => {
-  const task = await taskRepo.findById(undefined, taskId);
-
-  if (!task) {
-    throw new NotFoundError("task not found");
-  }
-
-  const project = await ProjectRepo.findById(undefined, task.projectId);
-
-  if (!project) {
-    throw new NotFoundError("project not found for this task");
-  }
-
-  const membership = await membershipRepo.findAllByUserAndOrg(
-    undefined,
+  const { task, project, membership } = await getTaskFromMembership(
     userId,
-    project.organizationId,
+    taskId,
   );
-
-  if (!membership) {
-    throw new AuthorizationError("not a member of this organization");
-  }
-
   if (commentData.parentCommentId) {
     const parentComment = await commentsRepo.findById(
       undefined,
@@ -78,34 +62,17 @@ export const createCommentService = async (taskId, commentData, userId) => {
 };
 
 export const getCommentsByTaskService = async (taskId, userId) => {
-  const task = await taskRepo.findById(undefined, taskId);
-
-  if (!task) {
-    throw new NotFoundError("task not found");
-  }
-
-  const project = await ProjectRepo.findById(undefined, task.projectId);
-
-  if (!project) {
-    throw new NotFoundError("project not found");
-  }
-
-  const member = await membershipRepo.findAllByUserAndOrg(
-    undefined,
+  const { task, project, membership } = await getTaskFromMembership(
     userId,
-    project.organizationId,
+    taskId,
   );
-
-  if (!member) {
-    throw new AuthorizationError("not a member of this organization");
-  }
 
   const comments = await commentsRepo.findByTask(undefined, taskId);
 
   logger.info(
     {
       taskId: taskId,
-      membershipId: member.id,
+      membershipId: membership.id,
     },
     "comments fetched successfully",
   );
@@ -124,33 +91,11 @@ export const updatecommentService = async (
   content,
   commentId,
 ) => {
-  const comment = await commentsRepo.findById(undefined, commentId);
-
-  if (!comment) {
-    throw new AuthorizationError("comment not found");
-  }
-
-  const task = await taskRepo.findById(undefined, taskId);
-
-  if (!task) {
-    throw new NotFoundError("task not found");
-  }
-
-  const project = await ProjectRepo.findById(undefined, task.projectId);
-
-  if (!project) {
-    throw new NotFoundError("project not found");
-  }
-
-  const membership = await membershipRepo.findAllByUserAndOrg(
-    undefined,
+  const { comment, membership, project } = await getCommentContext(
     userId,
-    project.organizationId,
+    taskId,
+    commentId,
   );
-
-  if (!membership) {
-    throw new AuthorizationError("not a member of this organization");
-  }
 
   let updatedComment;
 
@@ -192,48 +137,22 @@ export const updatecommentService = async (
 };
 
 export const deletecommentService = async (userId, taskId, commentId) => {
-    console.log("Comment ID in service:", commentId);
-  const comment = await commentsRepo.findById(undefined, commentId);
-
-  if (!comment) {
-    throw new NotFoundError("comment not found");
-  }
-
-  const task = await taskRepo.findById(undefined, taskId);
-
-  if (!task) {
-    throw new NotFoundError("task not found");
-  }
-
-  const project = await ProjectRepo.findById(undefined, task.projectId);
-
-  if (!project) {
-    throw new NotFoundError("project not found");
-  }
-
-  const membership = await membershipRepo.findAllByUserAndOrg(
-    undefined,
+  const { comment, membership, project } = await getCommentContext(
     userId,
-    project.organizationId,
+    taskId,
+    commentId,
   );
-
-  if (!membership) {
-    throw new AuthorizationError("not a member of this organization");
-  }
-
   let deletedComment;
 
   if (
     comment.membershipId !== membership.id &&
     membership.role !== "OWNER" &&
     membership.role !== "ADMIN"
-) {
-    throw new AuthorizationError(
-        "Not allowed to delete this comment."
-    );
-} else {
+  ) {
+    throw new AuthorizationError("Not allowed to delete this comment.");
+  } else {
     deletedComment = await commentsRepo.softDelete(undefined, commentId);
-}
+  }
 
   await logActivity({
     organizationId: project.organizationId,
@@ -255,7 +174,7 @@ export const deletecommentService = async (userId, taskId, commentId) => {
   return {
     success: true,
     statusCode: 200,
-    comment : deletedComment,
+    comment: deletedComment,
     message: "comment deleted successfully",
   };
 };
