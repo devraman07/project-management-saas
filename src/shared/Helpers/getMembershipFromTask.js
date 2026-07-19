@@ -1,4 +1,4 @@
-import { AuthorizationError } from "../../errors/AuthorizationError";
+import { AuthorizationError } from "../../errors/AuthorizationError.js";
 import { NotFoundError } from "../../errors/NotFoundError.js";
 import { membershipRepo } from "../../features/memberships/membership.repository.js";
 import { ProjectRepo } from "../../features/projects/project.repository.js";

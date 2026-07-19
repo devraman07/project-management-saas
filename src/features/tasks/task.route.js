@@ -8,6 +8,7 @@ import express from "express";
 import { authMiddleware } from "../../middlewares/auth.middileware.js";
 import { assignTaskController, deleteTaskController, getSingleTaskController, updateTaskController, updateTaskStatusController } from "./task.controller.js";
 import { TaskCommentRouter } from "../comments/taskComment.route.js";
+import {  TaskattachmentRouter } from "../attachments/Taskattachments.routes.js";
 
 export const taskRouter = express.Router();
 
@@ -42,3 +43,5 @@ taskRouter.delete(
 );
 
 taskRouter.use("/:taskId/comments", TaskCommentRouter);
+
+taskRouter.use("/:taskId/attachments", TaskattachmentRouter);

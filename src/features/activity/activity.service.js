@@ -6,11 +6,14 @@ import { activityRepository } from "./activity.repository.js";
 export const createActivityService = async ({
   organizationId,
   actorMembershipId,
+  membershipId,
   action,
   entityType,
   entityId,
   metadata = {},
 }) => {
+  const actorId = actorMembershipId ?? membershipId;
+
   if (!organizationId) {
     throw new ValidationError("Organization id is required");
   }
@@ -26,15 +29,16 @@ export const createActivityService = async ({
   if (!entityId) {
     throw new ValidationError("Entity id is required");
   }
+
   console.log("1. Validation passed");
 
   const activity = await activityRepository.create(undefined, {
-    organizationId: organizationId,
-    actorMembershipId: actorMembershipId,
-    action: action,
-    entityType: entityType,
-    entityId: entityId,
-    metadata: metadata,
+    organizationId,
+    actorMembershipId: actorId,
+    action,
+    entityType,
+    entityId,
+    metadata,
   });
 
   console.log("2. Activity inserted:", activity);
@@ -43,11 +47,11 @@ export const createActivityService = async ({
 
   console.log("3. Dispatch completed");
 
-
   logger.info(
     {
       activityId: activity.id,
       organizationId,
+      actorMembershipId: actorId,
       action,
       entityId,
       entityType,
@@ -58,6 +62,6 @@ export const createActivityService = async ({
   console.log("4. Service finished");
 
   return {
-    activity: activity,
+    activity,
   };
 };

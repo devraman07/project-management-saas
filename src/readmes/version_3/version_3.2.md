@@ -1,6 +1,5 @@
+## attachments
 
-attachments
------------
 id
 taskId
 membershipId
@@ -16,7 +15,6 @@ deletedAt
 POST /tasks/:taskId/attachments
 GET /tasks/:taskId/attachments
 DELETE /tasks/:taskId/attachments/:attachmentId
-
 
 attachments/
 
@@ -37,26 +35,32 @@ ATTACHMENT_UPLOADED
 ATTACHMENT_DELETED
 
 {
-  "taskId": "...",
-  "fileName": "requirements.pdf"
+"taskId": "...",
+"fileName": "requirements.pdf"
 } metadata
-
-
 
 V3.2 Attachments
 
-✅ Database Schema
-⬜ Repository
-⬜ Multer Setup
-⬜ Upload Service
-⬜ Upload Controller
-⬜ Upload Route
-⬜ GET Attachments
-⬜ DELETE Attachment
-⬜ Activity Logging
-⬜ Testing
+ Database Schema = done
+ Repository = done
+ Cloudinary config
 
--------------------------
+ Multer middleware
+
+ Multer error middleware
+
+ deleteLocalFile()
+
+ uploadFileToCloudinary()
+ Upload Service
+ Upload Controller
+ Upload Route
+ GET Attachments
+ DELETE Attachment
+ Activity Logging
+ Testing
+
+---
 
 Refactor
 
@@ -64,5 +68,6 @@ Refactor
 ⬜ Cleanup imports
 ⬜ Verify migrations
 
-
-
+BullMQ → RabbitMQ
+BullMQ → Kafka
+Queue → Direct database write

@@ -13,6 +13,11 @@ import "./jobs/workers/email.worker.js";
 import { logger } from "./shared/logger/logger.js";
 import { errorMiddleware } from "./middlewares/error.middleware.js";
 import { notificationRouter } from "./features/notifications/notification.routes.js";
+import { multerErrorMiddleware } from "./middlewares/multererror.middleware.js";
+import { db } from "./configs/db.js";
+import { redisConnection } from "./configs/redis.js";
+import { cloudinaryConnect } from "./configs/cloudinary.js";
+import { attachmentRouter } from "./features/attachments/attachment.router.js";
 dotenv.config();
 
 const app = express();
@@ -35,6 +40,7 @@ app.use("/api/v1/memberships", memberShipRouter);
 app.use("/api/v1/projects", projectRouter);
 app.use("/api/v1/invites", inviteRouter);
 app.use("/api/v1/organizations", notificationRouter);
+app.use("/api/v1/attachments", attachmentRouter);
 
 app.get("/", (req, res) => {
     res.send("Task management api working");
@@ -42,7 +48,13 @@ app.get("/", (req, res) => {
 
 
 
+
+app.use(multerErrorMiddleware);
 app.use(errorMiddleware);
+
+
+
+await cloudinaryConnect();
 
 app.listen(port, () => {
     logger.info(`server is running on port 3000`);
