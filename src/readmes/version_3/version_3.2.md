@@ -45,20 +45,20 @@ V3.2 Attachments
  Repository = done
  Cloudinary config
 
- Multer middleware
+ Multer middleware = done
 
- Multer error middleware
+ Multer error middleware = done
 
- deleteLocalFile()
+ deleteLocalFile() = done
 
- uploadFileToCloudinary()
- Upload Service
- Upload Controller
- Upload Route
- GET Attachments
- DELETE Attachment
- Activity Logging
- Testing
+ uploadFileToCloudinary() = done
+ Upload Service = done
+ Upload Controller = done 
+ Upload Route = done
+ GET Attachments = done
+ DELETE Attachment = done
+ Activity Logging = done
+ Testing = done
 
 ---
 
