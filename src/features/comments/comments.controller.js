@@ -9,7 +9,7 @@ import {
 export const createCommentController = asyncHandler(async (req, res) => {
   const { taskId } = req.params;
 
-  const result = await createCommentService(taskId, req.body, req.user.id);
+  const result = await createCommentService(taskId, req.body, req.user);
 
   return res.status(result.statusCode).json({
     success: result.success,

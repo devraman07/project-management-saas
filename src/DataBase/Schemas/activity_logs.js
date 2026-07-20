@@ -37,7 +37,9 @@ export const activityActionEnum = pgEnum("activity_action", [
 
 
   "ATTACHMENT_CREATED",
-  "ATTACHMENT_DELETED"
+  "ATTACHMENT_DELETED",
+
+  "MENTIONS_CREATED"
 
 ]);
 
@@ -54,6 +56,8 @@ export const entityTypeEnum = pgEnum("entity_type", [
   "COMMENT",
 
   "ATTACHMENT",
+
+  "MENTION"
 ]);
 
 export const activityLogs = pgTable("activity_logs", {

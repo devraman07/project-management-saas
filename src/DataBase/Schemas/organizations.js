@@ -1,7 +1,7 @@
-import { pgTable, uuid, varchar, timestamp, unique } from "drizzle-orm/pg-core";
+import { pgTable, uuid, varchar, timestamp, unique, boolean } from "drizzle-orm/pg-core";
 import { relations, sql } from "drizzle-orm";
 import { users } from "./users.js";
-import { boolean } from "drizzle-orm/gel-core";
+
 
 export const organizations = pgTable(
   "organizations",

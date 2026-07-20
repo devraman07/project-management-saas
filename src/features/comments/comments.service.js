@@ -4,14 +4,16 @@ import { getCommentContext } from "../../shared/Helpers/getCommentContext.js";
 import { getTaskFromMembership } from "../../shared/Helpers/getMembershipFromTask.js";
 import { logger } from "../../shared/logger/logger.js";
 import { logActivity } from "../../shared/utils/activity/Logger.js";
+import { hasMentions } from "../../shared/utils/mentions.utils.js";
 import { membershipRepo } from "../memberships/membership.repository.js";
+import { createMentionsfromComment } from "../mentions/mentions.service.js";
 import { ProjectRepo } from "../projects/project.repository.js";
 import { taskRepo } from "../tasks/task.repository.js";
 import { commentsRepo } from "./comments.repository.js";
 
-export const createCommentService = async (taskId, commentData, userId) => {
+export const createCommentService = async (taskId, commentData, user) => {
   const { task, project, membership } = await getTaskFromMembership(
-    userId,
+    user.id,
     taskId,
   );
   if (commentData.parentCommentId) {
@@ -35,6 +37,31 @@ export const createCommentService = async (taskId, commentData, userId) => {
     parentCommentId: commentData.parentCommentId,
     content: commentData.content,
   });
+
+  if (hasMentions(comment.content)) {
+    const createdMentions = await createMentionsfromComment({
+     user, comment
+    });
+
+    for (const mention of createdMentions) {
+      await logActivity({
+        action: "MENTIONS_CREATED",
+        entityType: "MENTION",
+        entityId: mention.id,
+        actorMembershipId: membership.id,
+        organizationId: membership.organizationId,
+        projectId: project.id,
+        taskId: comment.taskId,
+        metadata: {
+          mention: {
+            id: mention.id,
+            mentionedMembershipId: mention.mentionedMembershipId,
+            commentId: comment.id,
+          },
+        },
+      });
+    }
+  }
 
   await logActivity({
     organizationId: project.organizationId,

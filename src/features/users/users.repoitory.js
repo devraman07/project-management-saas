@@ -25,6 +25,11 @@ export const userrepo = {
 
     return newUser;
   },
+  async findByUsername(tx = db, username) {
+        const [user] = tx.select().from(users).where(eq(users.username, username));
+
+        return user;
+  },
 
   async update(id, updateData) {
     const [updatedUser] = await db

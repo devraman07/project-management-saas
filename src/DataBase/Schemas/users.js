@@ -8,15 +8,23 @@ import {
 } from "drizzle-orm/pg-core";
 
 export const users = pgTable("users", {
-  id: uuid("id").default(sql`gen_random_uuid()`).primaryKey(),
+  id: uuid("id")
+    .default(sql`gen_random_uuid()`)
+    .primaryKey(),
 
   name: varchar("name", {
     length: 255,
   }).notNull(),
 
+  username: varchar("username", {
+    length: 50,
+  }).notNull().unique(),
+
   email: varchar("email", {
     length: 255,
-  }).notNull().unique(),
+  })
+    .notNull()
+    .unique(),
 
   passwordHash: text("password_hash").notNull(),
 
@@ -29,9 +37,6 @@ export const users = pgTable("users", {
     .notNull(),
 });
 
-export const userRelations = relations(
-  users,
-  ({ many }) => ({
-    memberships: many(memberships),
-  })
-);
+export const userRelations = relations(users, ({ many }) => ({
+  memberships: many(memberships),
+}));

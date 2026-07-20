@@ -14,8 +14,8 @@ import { conflictError } from "../../errors/conflictError.js";
 import { logger } from "../../shared/logger/logger.js";
 import { NotFoundError } from "../../errors/NotFoundError.js";
 
-export const registerService = async ({ name, email, password }) => {
-  if (!name || !email || !password) {
+export const registerService = async ({ name, email, password, username }) => {
+  if (!name || !email || !password || !username) {
       throw new ValidationError("all fields are required");
     }
 
@@ -34,8 +34,9 @@ export const registerService = async ({ name, email, password }) => {
 
    
     const newUser = await userrepo.create({
-      name,
-      email,
+      name : name,
+      email: email,
+      username : username,
       passwordHash: hashedPassword,
     });
 
@@ -48,6 +49,7 @@ export const registerService = async ({ name, email, password }) => {
       id: newUser.id,
       name: newUser.name,
       email: newUser.email,
+      username : newUser.username,
     };
 
 
@@ -67,6 +69,7 @@ export const registerService = async ({ name, email, password }) => {
       id: newUser.id,
       name: newUser.name,
       email: newUser.email,
+      username : newUser.username,
     };
 
     logger.info({
