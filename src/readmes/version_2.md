@@ -1,532 +1,380 @@
-# 🚀 Project Management SaaS - Version 2 (V2)
+# ⚙️ ProjectFlow Backend — Version 2 (Production Foundation)
 
-> **Status:** ✅ Completed
->
-> **Focus:** Production-Ready Backend Architecture with Event-Driven Activity Logging & Notifications
+> **Release Goal:** Transform the MVP into a scalable, production-oriented backend by introducing asynchronous processing, observability, infrastructure improvements, and enterprise-grade architecture.
 
----
-
-# 📌 Overview
-
-V2 transforms the application from a traditional CRUD backend into an event-driven backend architecture.
-
-Instead of tightly coupling business logic with side effects, every important action now generates an activity event which is processed asynchronously using BullMQ workers and Redis.
-
-This architecture improves scalability, maintainability, and prepares the backend for real-world SaaS workloads.
+Version 2 focused less on adding end-user features and more on building the infrastructure required for a real SaaS application. This release introduced background workers, activity tracking, notifications, structured logging, cloud file management, and improved security.
 
 ---
 
-# 🏗️ Architecture
+# 🎯 Objectives
 
-```
-Client
-   │
-   ▼
-Express API
-   │
-   ▼
+The primary goals of Version 2 were:
+
+* Remove heavy operations from the request lifecycle.
+* Introduce asynchronous processing.
+* Improve scalability.
+* Improve observability.
+* Build an activity timeline.
+* Build a notification pipeline.
+* Improve security.
+* Prepare the backend for collaboration features.
+
+---
+
+# 🏗️ Architecture Evolution
+
+Version 2 extended the original layered architecture by introducing background processing.
+
+```text
+HTTP Request
+      │
+      ▼
 Controllers
-   │
-   ▼
+      │
+      ▼
 Services
-   │
-   ▼
+      │
+      ▼
 Repositories
-   │
-   ▼
-PostgreSQL (Neon)
-
-        │
-        │
-        └──────────────┐
-                       ▼
-                logActivity()
-                       │
-                       ▼
-              Activity Queue (BullMQ)
-                       │
-                       ▼
-               Activity Worker
-                       │
-                       ▼
-          activity_logs Database
-                       │
-                       ▼
-            Activity Dispatcher
-                       │
-                       ▼
-          Notification Queue
-                       │
-                       ▼
-          Notification Worker
-                       │
-                       ▼
-            notifications Table
-```
-
----
-
-# ✅ Authentication & Authorization
-
-- JWT Authentication
-- Access Token
-- Refresh Token
-- Secure Logout
-- Protected Routes
-- Authentication Middleware
-- RBAC (Role-Based Access Control)
-
-Supported Roles:
-
-- OWNER
-- ADMIN
-- PROJECT_MANAGER
-- MEMBER
-
----
-
-# ✅ Organization Module
-
-Implemented:
-
-- Create Organization
-- Update Organization
-- Delete Organization
-- Organization Ownership
-- Organization Membership Validation
-
----
-
-# ✅ Membership Module
-
-Implemented:
-
-- Invite Member
-- Accept Invitation
-- Membership Validation
-- Membership Repository
-- Organization Membership Middleware
-
----
-
-# ✅ Project Module
-
-Implemented:
-
-- Create Project
-- Update Project
-- Delete Project
-- Project Validation
-- Project Repository
-- Project Services
-
----
-
-# ✅ Task Module
-
-Implemented:
-
-- Create Task
-- Update Task
-- Delete Task
-- Assign Task
-- Task Status Update
-- Task Validation
-- Task Repository
-- Transaction Support
-
----
-
-# ✅ Repository Pattern
-
-Every major feature follows:
-
-```
-Controller
-     │
-     ▼
-Service
-     │
-     ▼
-Repository
-     │
-     ▼
+      │
+      ▼
 Database
 ```
 
-Repositories created for:
+Background processing:
 
-- Users
-- Organizations
-- Memberships
-- Projects
-- Tasks
-- Activities
-- Notifications
+```text
+Service
+      │
+      ▼
+BullMQ Queue
+      │
+      ▼
+Worker
+      │
+      ▼
+Background Processing
+```
+
+This separation keeps API responses fast while handling expensive operations asynchronously.
 
 ---
 
-# ✅ Transaction Layer
+# 🚀 Background Job System
 
-Database transactions implemented for:
+Version 2 introduced BullMQ with Redis to process asynchronous tasks.
 
-- Task Assignment
+## Implemented Queues
 
-Using:
+* Email Queue
+* Activity Queue
+* Notification Queue
 
-```
-db.transaction(...)
-```
-
-Ensures atomic database operations.
+Each queue is responsible for a single business concern.
 
 ---
 
-# ✅ Activity Logging System
+# 👷 Background Workers
 
-Every important business action generates an activity.
+Dedicated workers process queued jobs independently from the API server.
 
-Current Supported Activities:
+Implemented workers:
 
-- ORGANIZATION_CREATED
-- INVITE_SENT
-- INVITE_ACCEPTED
-- PROJECT_CREATED
-- TASK_CREATED
-- TASK_ASSIGNED
+* Email Worker
+* Activity Worker
+* Notification Worker
+
+This architecture allows the backend to scale horizontally by running multiple worker processes without affecting API performance.
+
+---
+
+# 📧 Email System
+
+The email system was redesigned to work asynchronously.
+
+Workflow:
+
+```text
+Create Invite
+        │
+        ▼
+Add Email Job
+        │
+        ▼
+Email Queue
+        │
+        ▼
+Email Worker
+        │
+        ▼
+Nodemailer
+```
+
+Benefits:
+
+* Faster API responses
+* Retry support
+* Better fault tolerance
+* Decoupled email delivery
+
+---
+
+# 🔔 Notification System
+
+Version 2 introduced the notification infrastructure.
+
+Current implementation includes:
+
+* Invite Notifications
+* Task Assignment Notifications
+
+Notification workflow:
+
+```text
+Business Event
+        │
+        ▼
+Notification Queue
+        │
+        ▼
+Notification Worker
+        │
+        ▼
+Notification Database
+```
+
+The notification pipeline is fully operational and designed for future real-time delivery.
+
+---
+
+# 📜 Activity Logging System
+
+One of the largest additions in Version 2 is the activity logging system.
+
+Every important business event can generate an activity entry.
+
+Examples include:
+
+* Organization Created
+* Project Created
+* Project Updated
+* Task Created
+* Task Updated
+* Task Assigned
+* Invite Sent
+* Invite Accepted
 
 Each activity stores:
 
-- Organization
-- Actor Membership
-- Action
-- Entity Type
-- Entity ID
-- Metadata
-- Timestamp
+* Organization
+* Actor Membership
+* Entity
+* Action
+* Metadata
+* Timestamp
+
+The activity feed is processed asynchronously using BullMQ.
 
 ---
 
-# ✅ BullMQ + Redis
+# 📂 Cloud File Management
 
-Integrated:
+Version 2 introduced cloud-based file storage.
 
-- Redis
-- BullMQ Queues
-- Workers
+Technologies:
 
-Queues:
+* Multer
+* Cloudinary
 
-- Activity Queue
-- Notification Queue
+Implemented features:
 
-Workers:
+* File Upload
+* File Deletion
+* Upload Helpers
+* Cloudinary Cleanup
 
-- Activity Worker
-- Notification Worker
-
----
-
-# ✅ Activity Worker
-
-Responsibilities:
-
-- Receive activity jobs
-- Validate payload
-- Store activity
-- Dispatch activity
-- Trigger notifications
+Attachments are no longer stored locally, making the application deployment-friendly.
 
 ---
 
-# ✅ Activity Dispatcher
+# 📊 Structured Logging
 
-Dispatcher converts activities into business events.
+Version 2 replaced scattered console logs with structured logging using **Pino**.
 
-Current Implementation:
+Logging levels:
 
-```
-TASK_ASSIGNED
-        │
-        ▼
-Create Notification
-```
+### Info
 
-Designed for future extension.
+Business success events.
 
-Future examples:
+Examples:
 
-```
-TASK_COMPLETED
-PROJECT_ARCHIVED
-COMMENT_ADDED
-MENTION_CREATED
-DUE_DATE_CHANGED
-```
+* User Registered
+* Organization Created
+* Task Assigned
+* Invite Accepted
 
 ---
 
-# ✅ Notification System
+### Warn
 
-Notification Pipeline:
+Expected business problems.
 
-```
-Activity
-     │
-     ▼
-Dispatcher
-     │
-     ▼
-Notification Queue
-     │
-     ▼
-Notification Worker
-     │
-     ▼
-notifications Table
-```
+Examples:
+
+* Invalid Login
+* Duplicate Resource
+* Unauthorized Action
+
+---
+
+### Error
+
+Unexpected failures.
+
+Examples:
+
+* Database Failure
+* Worker Failure
+* Redis Failure
+* External Service Failure
+
+This greatly improves production debugging and monitoring.
+
+---
+
+# 🔒 Security Improvements
+
+Version 2 strengthened the authentication system.
 
 Implemented:
 
-- Queue Notification
-- Create Notification
-- Store Notification
+* Refresh Token Rotation
+* Refresh Token Hashing
+* Token Revocation
+* Secure Logout
+* Membership-Based Authorization
+* Improved Authorization Checks
+* Protected Worker Processing
 
-Notification contains:
-
-- Recipient Membership
-- Activity
-- Read Status
-- Created At
-
----
-
-# ✅ Logging
-
-Structured logging implemented using Pino.
-
-Logs include:
-
-- Project Creation
-- Task Creation
-- Task Assignment
-- Activity Creation
-- Notification Creation
-- Queue Processing
+Authorization is enforced both through middleware and service-level business validation where required.
 
 ---
 
-# ✅ Error Handling
+# 🔄 Database Transactions
 
-Custom Error Classes:
+Version 2 expanded transaction usage for multi-step operations.
 
-- ValidationError
-- NotFoundError
-- AuthorizationError
-- ConflictError
+Implemented transactional workflows include:
 
-Centralized error handling across services.
+* Organization Creation
+* Invite Acceptance
+* Task Assignment
 
----
-
-# ✅ Middleware
-
-Implemented:
-
-- Authentication Middleware
-- Organization Membership Middleware
-- Role Authorization Middleware
-- Validation Middleware
+These ensure data consistency when multiple database operations must succeed or fail together.
 
 ---
 
-# ✅ Validation
+# 🗃️ Soft Delete Expansion
 
-Request validation implemented for:
+Soft delete support was expanded to preserve historical information.
 
-- Organizations
-- Projects
-- Tasks
-- Memberships
-- Authentication
+Implemented for:
 
----
+* Organizations
+* Projects
+* Tasks
+* Comments
+* Attachments
 
-# ✅ Current Folder Architecture
-
-```
-src/
-│
-├── features/
-│   ├── auth/
-│   ├── users/
-│   ├── organizations/
-│   ├── memberships/
-│   ├── projects/
-│   ├── tasks/
-│   ├── activity/
-│   └── notifications/
-│
-├── jobs/
-│   ├── queues/
-│   ├── workers/
-│   └── dispatcher/
-│
-├── middlewares/
-│
-├── lib/
-│
-├── db/
-│
-└── utils/
-```
+This prepares the backend for auditing, analytics, and activity history.
 
 ---
 
-# ✅ Technologies Used
+# 🧩 Helper Utilities
 
-Backend
+Version 2 introduced reusable helper modules including:
 
-- Node.js
-- Express.js
+* Cloudinary Delete Helper
+* File Upload Helper
+* Comment Context Helper
+* Membership Resolution Helper
 
-Database
-
-- PostgreSQL (Neon)
-- Drizzle ORM
-
-Queue
-
-- Redis
-- BullMQ
-
-Authentication
-
-- JWT
-- bcrypt
-
-Validation
-
-- Zod
-
-Logging
-
-- Pino
+These utilities reduce duplication across services.
 
 ---
 
-# ✅ Production Concepts Learned
+# 📦 Configuration Management
 
-- Repository Pattern
-- Service Layer
-- Event-Driven Architecture
-- Background Workers
-- Job Queues
-- Transactions
-- Activity Logging
-- Notification System
-- RBAC
-- Authorization
-- Middleware Design
-- Structured Logging
-- Queue Dispatching
-- Decoupled Services
-- Clean Architecture
+Application configuration was centralized.
+
+Configuration modules include:
+
+* Database
+* Redis
+* Mail
+* Cloudinary
+* Upload
+* Logger
+
+Environment variables are used for all sensitive credentials and runtime configuration.
 
 ---
 
-# 📊 Current System Flow
+# 📈 Scalability Improvements
 
-```
-User Request
-      │
-      ▼
-Controller
-      │
-      ▼
-Service
-      │
-      ▼
-Repository
-      │
-      ▼
-Database
+Version 2 focused heavily on scalability.
 
-      │
-      ▼
-logActivity()
+Implemented improvements include:
 
-      │
-      ▼
-Activity Queue
+* Background workers
+* Queue-based architecture
+* Decoupled services
+* Feature-based modules
+* Repository pattern
+* Service isolation
+* Modular configuration
+* Cloud storage
 
-      │
-      ▼
-Activity Worker
-
-      │
-      ▼
-activity_logs
-
-      │
-      ▼
-Dispatcher
-
-      │
-      ▼
-Notification Queue
-
-      │
-      ▼
-Notification Worker
-
-      │
-      ▼
-notifications
-```
+These improvements make the application easier to scale as traffic increases.
 
 ---
 
-# ✅ Version 2 Milestone Achieved
+# 🏛️ Engineering Principles
 
-✔ Production-ready layered architecture
+Version 2 reinforced several architectural standards:
 
-✔ Event-driven backend
-
-✔ Background job processing
-
-✔ Activity logging
-
-✔ Notification infrastructure
-
-✔ Transaction support
-
-✔ Repository pattern
-
-✔ RBAC
-
-✔ Clean architecture
-
-✔ Scalable backend foundation
+* Thin Controllers
+* Business Logic inside Services
+* Repository Pattern
+* Feature-Based Architecture
+* Asynchronous Processing
+* Structured Logging
+* Separation of Concerns
+* Reusable Helper Functions
+* Transaction-Based Consistency
 
 ---
 
-# 🎯 Ready for Version 3
+# 🚀 Version 2 Outcome
 
-With V2 complete, the backend now has a solid foundation to support advanced collaboration and productivity features.
+By the end of Version 2, ProjectFlow evolved from an MVP into a production-oriented backend.
 
-Planned focus for V3:
+Major achievements include:
 
-- Task Comments
-- @Mentions
-- Real-time Notifications (WebSockets)
-- Activity Timeline
-- File Attachments
-- Labels & Tags
-- Checklists
-- Dashboard Analytics
-- Advanced Search & Filtering
+* ✅ BullMQ Integration
+* ✅ Redis Integration
+* ✅ Background Workers
+* ✅ Email Queue
+* ✅ Notification Queue
+* ✅ Activity Queue
+* ✅ Structured Logging (Pino)
+* ✅ Activity Timeline
+* ✅ Notification Pipeline
+* ✅ Cloudinary Integration
+* ✅ Expanded Soft Deletes
+* ✅ Improved Security
+* ✅ Better Scalability
+* ✅ Production-Oriented Architecture
 
----
-
-> **V2 Summary:** This version established the core architecture of a production-grade SaaS backend. It introduced asynchronous event processing, activity tracking, and a scalable notification system while reinforcing clean architecture principles through repositories, services, middleware, and transactions. Future features can now be built on top of this reusable infrastructure with minimal changes.
+Version 2 established the infrastructure required to support advanced collaboration features, real-time communication, and future enterprise-scale enhancements while maintaining clean architecture and high maintainability.

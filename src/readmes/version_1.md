@@ -1,286 +1,358 @@
-# Secure Task Management API - Version 1.0
+# 📦 ProjectFlow Backend — Version 1 (MVP)
 
-A production-inspired backend for a collaborative project and task management platform built with **Node.js**, **Express.js**, **PostgreSQL**, **Drizzle ORM**, **Redis**, and **BullMQ**.
+> **Release Goal:** Build a complete, secure, and scalable backend foundation for a multi-tenant Project Management SaaS.
 
-The project follows a layered architecture (Repository → Service → Controller) and demonstrates authentication, role-based authorization, organization management, project management, task management, invitation workflows, and asynchronous background jobs.
+Version 1 focused on implementing the core business logic, authentication, authorization, and project management workflow while following clean architecture principles. This release established the foundation that later versions build upon.
 
 ---
 
-# Features
+# 🎯 Objectives
 
-## Authentication
+The primary goals of Version 1 were:
+
+* Build a secure authentication system.
+* Design a multi-tenant architecture.
+* Implement Role-Based Access Control (RBAC).
+* Build complete CRUD operations for core entities.
+* Follow clean architecture and separation of concerns.
+* Prepare the codebase for future scalability.
+
+---
+
+# 🏗️ Architecture
+
+ProjectFlow V1 follows a feature-based modular architecture.
+
+Each feature contains its own:
+
+```text
+feature/
+├── controller
+├── service
+├── repository
+├── route
+├── validator
+└── transformer
+```
+
+Application flow:
+
+```text
+Client
+    │
+    ▼
+Routes
+    │
+    ▼
+Controllers
+    │
+    ▼
+Services
+    │
+    ▼
+Repositories
+    │
+    ▼
+PostgreSQL
+```
+
+---
+
+# 🔐 Authentication
+
+Implemented using JWT.
+
+### Features
 
 * User Registration
 * User Login
-* JWT Access Tokens
-* Refresh Token Authentication
+* Access Token
+* Refresh Token
+* Refresh Token Rotation
+* Refresh Token Hashing
 * Secure Logout
-* Password Hashing using bcrypt
-* Refresh Token Persistence
+* Token Revocation
+* Protected Routes
+* Authentication Middleware
 
 ---
 
-## Organization Management
+# 👤 User Module
+
+Implemented functionality:
+
+* Register User
+* Login User
+* Get User Profile
+* Update User Profile
+* Delete User
+* Get All Users
+
+Repository methods:
+
+* Create User
+* Find User by ID
+* Find User by Email
+* Find All Users
+* Update User
+* Delete User
+
+---
+
+# 🏢 Organization Module
+
+Organizations act as isolated workspaces.
+
+Implemented:
 
 * Create Organization
 * Update Organization
-* Get Organization Details
-* Organization Membership Management
-* Multi-Organization Support
+* Delete Organization (Soft Delete)
+* Get Organization
+* Get User Organizations
+* Get Owned Organizations
+
+Repository methods:
+
+* Create
+* Find by ID
+* Find by Name
+* Find Duplicate
+* Find by Creator
+* Update
+* Soft Delete
 
 ---
 
-## Role-Based Access Control (RBAC)
+# 👥 Membership System
 
-Supported Roles:
+Every user joins an organization through a membership.
 
-* OWNER
-* ADMIN
-* PROJECT_MANAGER
-* MEMBER
-* VIEWER
+This is the core authorization model of ProjectFlow.
 
-Permissions are enforced through middleware across the application.
+Supported roles:
+
+* Owner
+* Admin
+* Project Manager
+* Member
+
+Implemented features:
+
+* Add Member
+* Remove Member
+* Update Member Role
+* View Members
+* View User Memberships
+
+Authorization is performed using **Membership IDs** instead of User IDs, making permissions organization-specific.
 
 ---
 
-# Project Management
+# ✉️ Invitation System
+
+Organizations can invite new users through secure invitation links.
+
+Implemented:
+
+* Create Invite
+* Email Invitation
+* Accept Invite
+* Membership Creation
+* Invite Validation
+
+Repository methods:
+
+* Create Invite
+* Find Invite
+* Accept Invite
+* Update Invite Status
+
+---
+
+# 📁 Project Module
+
+Implemented:
 
 * Create Project
-* Get All Projects
-* Get Project by ID
-* Update Project Details
+* Get Project
+* Get Organization Projects
+* Update Project
 * Update Project Status
-* Archive Project
+* Soft Delete Project
+
+Repository methods:
+
+* Create
+* Find by ID
+* Find by Name
+* Find by Organization
+* Update
+* Update Status
+* Soft Delete
 
 ---
 
-# Task Management
+# ✅ Task Module
+
+Implemented:
 
 * Create Task
-* Get Tasks for a Project
-* Get Task by ID
+* Get Task
+* Get Project Tasks
 * Update Task
-* Assign Task
 * Update Task Status
-* Delete Task
+* Assign Task
+* Soft Delete Task
+
+Repository methods:
+
+* Create
+* Find by ID
+* Find by Project
+* Update
+* Assign
+* Update Status
+* Soft Delete
 
 ---
 
-# Invitation System
+# 🔒 Role-Based Access Control (RBAC)
 
-* Create Organization Invite
-* Email Invitation using BullMQ
-* Secure Invite Tokens
-* Validate Invite Token
-* Accept Invite
-* Automatic Membership Creation
+Authorization is enforced using middleware and service-level validation.
 
----
+Roles:
 
-# Background Jobs
+* Owner
+* Admin
+* Project Manager
+* Member
 
-Powered by:
-
-* BullMQ
-* Redis
-
-Implemented Jobs:
-
-* Welcome Email
-* Organization Invite Email
-
-The API server remains responsive while email processing happens asynchronously through dedicated workers.
+Permissions are determined by membership within an organization rather than global user roles.
 
 ---
 
-# Tech Stack
+# 🧩 Middleware
 
-### Backend
-
-* Node.js
-* Express.js
-
-### Database
-
-* PostgreSQL
-* Drizzle ORM
-
-### Authentication
-
-* JWT
-* bcrypt
-
-### Background Processing
-
-* Redis
-* BullMQ
-
-### Email
-
-* Nodemailer
-
-### Containerization
-
-* Docker (Redis)
-
----
-
-# Architecture
-
-Repository Layer
-
-Responsible for all database operations.
-
-↓
-
-Service Layer
-
-Contains business logic and validation.
-
-↓
-
-Controller Layer
-
-Handles HTTP requests and responses.
-
-↓
-
-Routes
-
-Expose REST APIs.
-
-↓
-
-Middlewares
-
-Authentication
-
-Authorization
-
-Validation
-
-Organization Membership
-
-Role Permissions
-
----
-
-# Security Features
-
-* JWT Authentication
-* Refresh Token Strategy
-* Password Hashing
-* Role-Based Authorization
-* Organization Membership Validation
-* Invite Token Validation
-* Secure Background Email Processing
-
----
-
-# Project Structure
-
-```
-src/
-│
-├── configs/
-├── database/
-├── features/
-│   ├── auth/
-│   ├── organizations/
-│   ├── memberships/
-│   ├── projects/
-│   ├── tasks/
-│   ├── invites/
-│
-├── jobs/
-│   ├── queues/
-│   └── workers/
-│
-├── middlewares/
-├── repositories/
-├── shared/
-│   ├── utils/
-│   ├── validators/
-│   └── transformers/
-│
-└── server.js
-```
-
----
-
-# Current API Modules
+Implemented middleware includes:
 
 * Authentication
+* Refresh Token Validation
+* Organization Membership Check
+* Organization Owner Check
+* Owner or Admin Check
+* Role Validation
+* Project Management Authorization
+* Task Ownership Check
+* Task Assignment Check
+* File Upload Middleware
+* Multer Error Handler
+* Global Error Handler
+
+---
+
+# 🗄️ Database
+
+Primary entities:
+
+* Users
 * Organizations
 * Memberships
 * Projects
 * Tasks
 * Invites
+* Refresh Tokens
+
+Relationships were designed around organizations and memberships to support a multi-tenant SaaS architecture.
 
 ---
 
-# Version 1 Highlights
+# ⚠️ Error Handling
 
-* Layered Backend Architecture
-* Multi-Tenant Organization Design
-* Role-Based Access Control
-* Background Job Processing
-* Email Queue using BullMQ
-* Secure Invitation Workflow
-* Dockerized Redis
-* Production-Oriented Folder Structure
+Custom error classes:
 
----
+* AppError
+* AuthenticationError
+* AuthorizationError
+* BadRequestError
+* ConflictError
+* DatabaseError
+* ExternalServiceError
+* NotFoundError
+* ValidationError
 
-# Planned Features (Version 2)
-
-* Database Transactions
-* Email Verification
-* Forgot Password
-* Password Reset
-* Invite Revocation
-* Invite Resend
-* Invite Management
-* Scheduled Cleanup Jobs
-* Weekly Productivity Reports
+A centralized global error handler provides consistent API responses.
 
 ---
 
-# Planned Features (Version 3)
+# ✅ Validation
 
-* Audit Logs
-* Application Logging
-* Monitoring
-* Analytics Dashboard
-* Notification System
-* Webhooks
-* Performance Metrics
-* Production Optimizations
+Input validation is handled through dedicated validator modules for each feature.
 
----
+Validation responsibilities include:
 
-# Learning Objectives
-
-This project was built to understand and implement production backend engineering concepts, including:
-
-* REST API Design
-* Authentication & Authorization
-* Layered Architecture
-* Repository Pattern
-* RBAC
-* PostgreSQL Data Modeling
-* Background Job Processing
-* Redis Integration
-* Docker Basics
-* Scalable Backend Design
+* Request body validation
+* Route parameter validation
+* Business rule validation
+* Duplicate resource prevention
 
 ---
 
-# Status
+# 🔄 Transactions
 
-**Version:** 1.0
+To maintain data consistency, complex operations are executed using database transactions.
 
-**Development Status:** Complete
+Implemented transactions:
 
-Version 1 provides a complete backend foundation for a collaborative SaaS application. Future versions will focus on production-grade reliability, scalability, observability, and advanced collaboration features.
+* Create Organization
+* Accept Invite
+* Assign Task
+
+---
+
+# 🧹 Soft Delete Strategy
+
+Version 1 introduced soft deletes for important business entities instead of permanent deletion.
+
+Supported entities:
+
+* Organizations
+* Projects
+* Tasks
+
+This approach preserves historical data and prepares the system for future audit logging.
+
+---
+
+# 📌 Engineering Decisions
+
+Version 1 established several architectural principles that remain throughout the project:
+
+* Feature-based folder structure
+* Repository-Service-Controller pattern
+* Thin controllers
+* Business logic isolated in services
+* Database access isolated in repositories
+* Membership-based authorization
+* Transaction-based consistency
+* Modular and scalable code organization
+
+---
+
+# 🚀 Version 1 Outcome
+
+By the end of Version 1, ProjectFlow provided:
+
+* ✅ Secure Authentication
+* ✅ Multi-Tenant Organizations
+* ✅ Membership-Based RBAC
+* ✅ Invitation Workflow
+* ✅ Project Management
+* ✅ Task Management
+* ✅ Clean Architecture
+* ✅ Centralized Error Handling
+* ✅ Modular Feature Structure
+* ✅ Database Transactions
+* ✅ Soft Deletes
+
+Version 1 delivered a complete Minimum Viable Product (MVP) and established a scalable foundation for production-oriented enhancements introduced in Version 2.

@@ -1,245 +1,402 @@
-# Secure Team Task Manager API
+# 🚀 ProjectFlow – Enterprise Project Management SaaS (Backend)
 
-A production-style backend revision project built with Node.js and Express.js to strengthen backend engineering fundamentals.
-
-This project focuses on authentication, authorization, ownership-based access control, modular architecture, request lifecycle understanding, and workflow-driven task management.
+> A production-oriented, scalable backend powering a collaborative project management platform with organizations, projects, tasks, activity tracking, notifications, and secure role-based access control.
 
 ---
 
-## Project Goal
+## 📖 Overview
 
-This project was built as a backend engineering revision system to deeply understand:
+ProjectFlow is a backend-first Project Management SaaS designed with production architecture in mind. Instead of focusing only on CRUD operations, the project emphasizes scalability, maintainability, security, and clean software architecture.
 
-* Authentication flow
-* Authorization (RBAC)
-* Middleware chaining
-* Service-controller architecture
-* Request lifecycle
-* Resource ownership
-* Task workflows
-* Validation & transformation
-* Production-grade backend patterns
+The system supports multiple organizations, role-based collaboration, project management, task management, comments, file attachments, mentions, notifications, activity tracking, and background job processing.
 
-Current version uses in-memory arrays instead of database storage for learning core backend architecture first.
-
-Database integration will be added in the next version.
+The project follows a modular, feature-based architecture using the Repository-Service-Controller pattern and is designed to evolve into a full enterprise collaboration platform.
 
 ---
 
-## Tech Stack
+# ✨ Current Features
 
-* Node.js
-* Express.js
-* JWT
-* bcrypt
-* express-validator
-* express-session
-* Cookies
-* Helmet
-* CORS
+## Authentication & Security
 
----
-
-## Architecture
-
-Feature-based modular architecture:
-
-```bash
-src/
-│── config/
-│── data/
-│── middlewares/
-│── shared/
-│
-├── features/
-│   ├── auth/
-│   │   ├── controllers/
-│   │   ├── services/
-│   │   ├── routes/
-│   │   ├── validators/
-│   │   ├── transformers/
-│   │
-│   ├── users/
-│   │   ├── controllers/
-│   │   ├── services/
-│   │   ├── routes/
-│   │   ├── validators/
-│   │   ├── transformers/
-│   │
-│   ├── tasks/
-│   │   ├── controllers/
-│   │   ├── services/
-│   │   ├── routes/
-│   │   ├── validators/
-│   │   ├── transformers/
-```
+* JWT Authentication
+* Access Token + Refresh Token flow
+* Refresh Token Rotation
+* Refresh Token Hashing
+* Secure Logout
+* Token Revocation
+* Authentication Middleware
+* Authorization Middleware
+* Role-Based Access Control (RBAC)
+* Membership-Based Authorization
+* Global Error Handling
+* Custom Error Classes
+* Request Validation
 
 ---
 
-## Features Completed
-
-# Authentication Module
+## User Management
 
 * User Registration
 * User Login
-* Logout
-* Refresh Token Rotation
-* Password Hashing with bcrypt
-* JWT Access Token
-* JWT Refresh Token
-* Token Blacklisting
-* Session-based fallback authentication
-
-### Auth Middlewares
-
-* Auth Middleware
-* Role Middleware
-
----
-
-# User Module
-
-* Get All Users
-* Get User Profile
+* User Profile
 * Update Profile
-* Delete Profile
-
-### User Access Patterns
-
-* Ownership check
-* Owner or Admin deletion
-
-### User Middlewares
-
-* Ownership Middleware
-* OwnerOrAdmin Middleware
+* Delete User
+* User Listing
 
 ---
 
-# Task Module
+## Organization Management
 
-Workflow-driven task management system.
-
-## Manager Actions
-
-* Create Task
-* Update Task
-* Delete Task
-* Assign Task
-* Reassign Task
-* Get Own Tasks
-
-## Member Actions
-
-* View Assigned Tasks
-* Update Task Status
-
-## Admin Actions
-
-* View All Tasks
+* Create Organization
+* Update Organization
+* Delete Organization (Soft Delete)
+* View Organization
+* View User Organizations
+* Organization Ownership
 
 ---
 
-## Task Workflow System
+## Membership System
 
-Separate workflow routes:
+Every organization maintains its own memberships.
 
-```bash
-PATCH /tasks/:id
-PATCH /tasks/:id/assign
-PATCH /tasks/:id/status
+Supported Roles:
+
+* Owner
+* Admin
+* Project Manager
+* Member
+
+Features:
+
+* Add Members
+* Remove Members
+* Update Member Role
+* View Organization Members
+
+The entire authorization system is built around Membership IDs instead of User IDs.
+
+---
+
+## Invitation System
+
+* Invite Members via Email
+* Secure Invite Tokens
+* Accept Invite
+* Membership Creation
+* Background Email Delivery
+
+---
+
+## Project Management
+
+* Create Projects
+* Update Projects
+* Archive/Delete Projects (Soft Delete)
+* View Projects
+* Project Status Management
+
+---
+
+## Task Management
+
+* Create Tasks
+* Update Tasks
+* Delete Tasks (Soft Delete)
+* Task Assignment
+* Task Status Updates
+* Task Ownership
+* Project Task Listing
+
+---
+
+## Collaboration
+
+### Comments
+
+* Create Comment
+* Update Comment
+* Delete Comment
+* View Task Comments
+
+### Attachments
+
+* File Upload
+* Cloudinary Integration
+* Delete Attachment
+* View Attachments
+
+### Mentions
+
+* Mention Team Members inside Comments
+
+---
+
+## Notifications
+
+Current implementation includes:
+
+* Invite Notifications
+* Task Assignment Notifications
+* Background Notification Queue
+* Notification Worker
+
+The notification system is implemented and will continue expanding as new collaborative features are added.
+
+---
+
+## Activity Timeline
+
+ProjectFlow records important business events including:
+
+* Organization Created
+* Project Created
+* Task Created
+* Task Updated
+* Task Assigned
+* Invite Sent
+* Additional activities as features evolve
+
+Activity logging is powered by background jobs to avoid slowing down user requests.
+
+---
+
+## Background Jobs
+
+Implemented using BullMQ.
+
+Queues:
+
+* Email Queue
+* Notification Queue
+* Activity Queue
+
+Workers:
+
+* Email Worker
+* Notification Worker
+* Activity Worker
+
+---
+
+## File Management
+
+* Multer Upload Middleware
+* Cloudinary Storage
+* Upload Helpers
+* File Cleanup Helpers
+
+---
+
+## Logging
+
+Structured application logging powered by **Pino**.
+
+Business events, warnings, and unexpected errors are logged separately to improve debugging and observability.
+
+---
+
+## Database
+
+Built using PostgreSQL with Drizzle ORM.
+
+Current entities include:
+
+* Users
+* Organizations
+* Memberships
+* Projects
+* Tasks
+* Comments
+* Attachments
+* Mentions
+* Notifications
+* Activity Logs
+* Invites
+* Refresh Tokens
+
+---
+
+# 🏗️ Architecture
+
+The backend follows a layered architecture.
+
+```text
+Client
+      │
+      ▼
+Express Routes
+      │
+      ▼
+Controllers
+      │
+      ▼
+Services
+      │
+      ▼
+Repositories
+      │
+      ▼
+Drizzle ORM
+      │
+      ▼
+PostgreSQL
 ```
 
-This separates:
+Background processing is completely separated from request handling.
 
-* task structure updates
-* task assignment
-* task execution lifecycle
-
----
-
-## Role System
-
-Roles:
-
-```bash
-ADMIN
-MANAGER
-MEMBER
+```text
+Service
+      │
+      ▼
+BullMQ Queue
+      │
+      ▼
+Worker
+      │
+      ▼
+Email / Notification / Activity
 ```
 
-RBAC is implemented throughout the project.
-
 ---
 
-## Task Status System
+# 📂 Project Structure
 
-Task statuses:
-
-```bash
-PENDING
-IN_PROGRESS
-COMPLETED
+```text
+src
+├── configs
+├── database
+│   └── schemas
+├── errors
+├── features
+│   ├── auth
+│   ├── users
+│   ├── organizations
+│   ├── memberships
+│   ├── invites
+│   ├── projects
+│   ├── tasks
+│   ├── comments
+│   ├── attachments
+│   ├── mentions
+│   ├── notifications
+│   └── activity
+├── jobs
+│   ├── queues
+│   └── workers
+├── middlewares
+├── shared
+└── utils
 ```
 
-Stored as constants.
+---
+
+# 🛠️ Tech Stack
+
+### Backend
+
+* Node.js
+* Express.js
+
+### Database
+
+* PostgreSQL
+* Drizzle ORM
+
+### Authentication
+
+* JWT
+* Refresh Tokens
+
+### Caching & Queues
+
+* Redis
+* BullMQ
+
+### Storage
+
+* Cloudinary
+* Multer
+
+### Email
+
+* Nodemailer
+
+### Logging
+
+* Pino
+
+### Validation
+
+* Zod
 
 ---
 
-## Security Implemented
+# 🔒 Security Features
 
 * JWT Authentication
-* Refresh Token Validation
-* Password Hashing
-* Protected Routes
-* Token Blacklisting
-* Ownership-based Access Control
-* Role-based Authorization
-
----
-
-## Core Backend Concepts Practiced
-
-* Request lifecycle
-* Middleware chaining
-* Controller-Service separation
-* DTO validation
-* Input transformation
+* Refresh Token Rotation
+* Refresh Token Hashing
+* Secure Logout
 * RBAC
-* Ownership pattern
-* Resource relation integrity
-* Session + JWT hybrid auth
-* Modular backend architecture
+* Membership-Based Authorization
+* Validation Layer
+* Global Error Handler
+* Soft Deletes
+* Background Job Isolation
 
 ---
 
-## Future Upgrades (Version 2)
+# 📚 Documentation
 
-* MongoDB integration
-* Mongoose schemas
-* Centralized error handling
-* Pagination
-* Filtering
-* Sorting
-* Search
-* Redis caching
-* Rate limiting
-* Secure cookies
-* CSRF protection
-* SaaS multi-team architecture
-* Notifications system
-* Audit logs
-* Event-driven architecture
+Additional documentation can be found in the `docs/` directory.
+
+* VERSION_1.md
+* VERSION_2.md
+* VERSION_3.md
+* ARCHITECTURE.md
+* DATABASE.md
+* API_GUIDE.md
+* ROADMAP.md
+* CHANGELOG.md
 
 ---
 
-## Learning Focus
+# 🚧 Current Status
 
-This project is part of my backend engineering journey to master:
+The backend is fully functional and currently powers:
 
-* Backend fundamentals
-* Scalable API design
-* Production-grade architecture
-* System design thinking
+* Authentication
+* Organization Management
+* Membership System
+* Projects
+* Tasks
+* Comments
+* Attachments
+* Mentions
+* Notifications
+* Activity Logs
+* Background Workers
 
-Next version will rebuild this with database persistence and advanced backend optimizations.
+The next phase focuses on real-time collaboration, API documentation, automated testing, deployment, and frontend integration.
+
+---
+
+# 📈 Roadmap
+
+* Complete notification coverage
+* Full activity timeline
+* Search, filtering & pagination
+* Swagger/OpenAPI documentation
+* Automated testing
+* Docker Compose
+* WebSocket-based real-time collaboration
+* Frontend integration
+* Deployment
+* Advanced SaaS features
+
+---
+
+# 📄 License
+
+This project is intended as a portfolio-grade enterprise backend demonstrating scalable architecture, secure authentication, collaborative workflows, and production-oriented engineering practices.
