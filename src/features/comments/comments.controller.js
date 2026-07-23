@@ -1,4 +1,5 @@
 import { asyncHandler } from "../../shared/utils/asyncHandler.js";
+import { sendSuccessResponse } from "../../shared/utils/sendSuccessResponce.js";
 import {
   createCommentService,
   deletecommentService,
@@ -11,11 +12,7 @@ export const createCommentController = asyncHandler(async (req, res) => {
 
   const result = await createCommentService(taskId, req.body, req.user);
 
-  return res.status(result.statusCode).json({
-    success: result.success,
-    message: result.message,
-    comment: result.comment,
-  });
+  return sendSuccessResponse(res, result);
 });
 
 export const getcommentsByTaskController = asyncHandler(async (req, res) => {
@@ -23,11 +20,7 @@ export const getcommentsByTaskController = asyncHandler(async (req, res) => {
 
   const result = await getCommentsByTaskService(taskId, req.user.id);
 
-  return res.status(result.statusCode).json({
-    success: result.success,
-    comments: result.comments,
-    message: result.message,
-  });
+  return sendSuccessResponse(res, result);
 });
 
 export const updatecommentController = asyncHandler(async (req, res) => {
@@ -42,11 +35,7 @@ export const updatecommentController = asyncHandler(async (req, res) => {
     commentId,
   );
 
-  return res.status(result.statusCode).json({
-    success: result.success,
-    comment: result.comment,
-    message: result.message,
-  });
+  return sendSuccessResponse(res, result);
 });
 
 export const deletecommentController = asyncHandler(async (req, res) => {
@@ -54,8 +43,5 @@ export const deletecommentController = asyncHandler(async (req, res) => {
 
   const result = await deletecommentService(req.user.id, taskId, commentId);
 
-  return res.status(result.statusCode).json({
-    success: result.success,
-    message: result.message,
-  });
+  return sendSuccessResponse(res, result);
 });

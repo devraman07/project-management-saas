@@ -65,4 +65,13 @@ export const commentsRepo = {
   async hardDelete(tx = db, commentsId) {
     return await tx.delete(comments).where(eq(comments.id, commentsId));
   },
+
+  async findRepliesByParentCommentId(tx = db, parentCommentId) {
+    const [replies] = await tx
+      .select()
+      .from(comments)
+      .where(eq(comments.parentCommentId, parentCommentId));
+
+    return replies;
+  },
 };

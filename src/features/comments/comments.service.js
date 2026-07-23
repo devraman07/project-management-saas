@@ -1,7 +1,10 @@
 import { AuthorizationError } from "../../errors/AuthorizationError.js";
 import { NotFoundError } from "../../errors/NotFoundError.js";
+import { createCommentActivity } from "../../shared/Helpers/createCommentActivity.js";
 import { getCommentContext } from "../../shared/Helpers/getCommentContext.js";
 import { getTaskFromMembership } from "../../shared/Helpers/getMembershipFromTask.js";
+import { processCommentMentions } from "../../shared/Helpers/processMentions.js";
+import { validateParentComment } from "../../shared/Helpers/validateParentComment.js";
 import { logger } from "../../shared/logger/logger.js";
 import { logActivity } from "../../shared/utils/activity/Logger.js";
 import { hasMentions } from "../../shared/utils/mentions.utils.js";
@@ -16,74 +19,35 @@ export const createCommentService = async (taskId, commentData, user) => {
     user.id,
     taskId,
   );
-  if (commentData.parentCommentId) {
-    const parentComment = await commentsRepo.findById(
-      undefined,
-      commentData.parentCommentId,
-    );
 
-    if (!parentComment) {
-      throw new NotFoundError("Parent comment not found");
-    }
-
-    if (parentComment.taskId !== taskId) {
-      throw new ValidationError("Parent comment does not belong to this task.");
-    }
-  }
+  await validateParentComment(taskId, commentData.parentCommentId);
 
   const comment = await commentsRepo.createComment(undefined, {
     taskId,
     membershipId: membership.id,
-    parentCommentId: commentData.parentCommentId,
+    parentCommentId: commentData.parentCommentId ?? null,
     content: commentData.content,
   });
 
-  if (hasMentions(comment.content)) {
-    const createdMentions = await createMentionsfromComment({
-     user, comment
-    });
+  await processCommentMentions({
+    user,
+    comment,
+    membership,
+    project,
+  });
 
-    for (const mention of createdMentions) {
-      await logActivity({
-        action: "MENTIONS_CREATED",
-        entityType: "MENTION",
-        entityId: mention.id,
-        actorMembershipId: membership.id,
-        organizationId: membership.organizationId,
-        projectId: project.id,
-        taskId: comment.taskId,
-        metadata: {
-          mention: {
-            id: mention.id,
-            mentionedMembershipId: mention.mentionedMembershipId,
-            commentId: comment.id,
-          },
-        },
-      });
-    }
-  }
-
-  await logActivity({
-    organizationId: project.organizationId,
-
-    actorMembershipId: membership.id,
-
-    action: "COMMENT_CREATED",
-
-    entityType: "COMMENT",
-
-    entityId: comment.id,
-
-    metadata: {
-      taskId,
-      commentPreview: comment.content.substring(0, 100),
-    },
+  await createCommentActivity({
+    comment,
+    membership,
+    project,
   });
 
   return {
     success: true,
     statusCode: 201,
-    message: "Comment created successfully.",
+    message: comment.parentCommentId
+      ? "Reply created successfully."
+      : "Comment created successfully.",
     comment,
   };
 };
@@ -107,7 +71,7 @@ export const getCommentsByTaskService = async (taskId, userId) => {
   return {
     success: true,
     statusCode: 200,
-    comments: comments,
+    data: comments,
     message: "comments fetched successfully",
   };
 };
@@ -158,7 +122,7 @@ export const updatecommentService = async (
   return {
     success: true,
     statusCode: 200,
-    comment: updatedComment,
+    data: updatedComment,
     message: "comment updated successfully",
   };
 };
@@ -201,7 +165,37 @@ export const deletecommentService = async (userId, taskId, commentId) => {
   return {
     success: true,
     statusCode: 200,
-    comment: deletedComment,
+    data: deletedComment,
     message: "comment deleted successfully",
+  };
+};
+
+export const getRepliesService = async (taskId, parentCommentId, user) => {
+  const { membership } = await getTaskFromMembership(user.id, taskId);
+
+  const parentComment = await commentsRepo.findById(undefined, parentCommentId);
+
+  if (!parentComment) {
+    throw new NotFoundError("Parent comment not found.");
+  }
+
+  if (parentComment.deletedAt) {
+    throw new ValidationError("Parent comment has been deleted.");
+  }
+
+  if (parentComment.taskId !== taskId) {
+    throw new ValidationError("Comment does not belong to this task.");
+  }
+
+  const replies = await commentsRepo.findRepliesByParentCommentId(
+    undefined,
+    parentCommentId,
+  );
+
+  return {
+    success: true,
+    statusCode: 200,
+    message: "Replies retrieved successfully.",
+    data: replies,
   };
 };
