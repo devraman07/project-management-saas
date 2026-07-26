@@ -1,50 +1,35 @@
-export const inviteSchemas = {
-  Invite: {
-    type: "object",
+export const inviteResponses = {
 
-    properties: {
-      id: {
-        type: "string",
-        format: "uuid",
+  InviteResponse: {
+
+    description: "Invite details.",
+
+    content: {
+
+      "application/json": {
+
+        schema: {
+
+          type: "object",
+
+          properties: {
+
+            success: {
+              type: "boolean",
+            },
+
+            invite: {
+              $ref: "#/components/schemas/Invite",
+            },
+
+          },
+
+        },
+
       },
 
-      invitedEmail: {
-        type: "string",
-        format: "email",
-      },
-
-      roleToAssign: {
-        type: "string",
-
-        enum: [
-          "OWNER",
-          "ADMIN",
-          "PROJECT_MANAGER",
-          "MEMBER",
-          "VIEWER",
-        ],
-      },
-
-      status: {
-        type: "string",
-
-        enum: [
-          "PENDING",
-          "ACCEPTED",
-          "EXPIRED",
-          "REVOKED",
-        ],
-      },
-
-      expiresAt: {
-        type: "string",
-        format: "date-time",
-      },
-
-      createdAt: {
-        type: "string",
-        format: "date-time",
-      },
     },
+
   },
+
 };
