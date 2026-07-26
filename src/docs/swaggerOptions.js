@@ -1,6 +1,3 @@
-
-
-
 export const swaggerDefinition = {
   openapi: "3.0.3",
 
@@ -36,13 +33,23 @@ export const swaggerDefinition = {
       bearerAuth: [],
     },
   ],
+  tags: [
+    { name: "Authentication" },
+    { name: "Users" },
+    { name: "Organizations" },
+    { name: "Memberships" },
+    { name: "Invites" },
+    { name: "Projects" },
+    { name: "Tasks" },
+    { name: "Comments" },
+    { name: "Replies" },
+    { name: "Attachments" },
+    { name: "Notifications" },
+  ],
 };
 
 export const swaggerOptions = {
   definition: swaggerDefinition,
 
-  apis: [
-    "./src/modules/**/*.routes.js",
-    "./src/modules/**/*.controller.js",
-  ],
+  apis: ["./src/modules/**/*.routes.js", "./src/modules/**/*.controller.js"],
 };
