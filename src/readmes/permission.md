@@ -1,309 +1,180 @@
 # ProjectFlow — Permissions & Lifecycle Rules
 
-> **Status:** Design Phase
-> **Purpose:** Source of truth for ProjectFlow authorization, permissions, collaboration access, and lifecycle rules.
+> **Status:** LOCKED BASELINE
+> **Purpose:** Defines authorization, project/task scope, workflow, transfers, collaboration, and lifecycle rules before implementation.
 
 ---
 
 # 1. Authorization Model
 
-ProjectFlow uses multiple levels of authorization:
+ProjectFlow uses:
 
-```text
-Organization Role
-       ↓
-Project Membership
-       ↓
-Resource Scope
-       ↓
-Action Permission
-       ↓
-Lifecycle Rules
-```
-
-### Organization Roles
-
-* `ADMIN`
-* `PROJECT_MANAGER`
-* `MEMBER`
-* `VIEWER`
+* **ADMIN** — organization-level authority
+* **PROJECT_MANAGER** — project-level management authority
+* **MEMBER** — project participant and task assignee
+* **VIEWER** — read-only project participant
 
 There is **no Owner role**.
 
----
-
-# 2. Core Authorization Principle
-
-ProjectFlow does not use a simple:
-
-```text
-ADMIN > PROJECT_MANAGER > MEMBER > VIEWER
-```
-
-Instead:
+### Core authorization principle
 
 > **Role determines capability, membership determines project scope, and task assignment determines task workflow scope.**
 
-```text
-ADMIN
-└── Organization-level authority
+---
 
-PROJECT_MANAGER
-└── Project-level authority
+# 2. Organization Scope
 
-MEMBER
-└── Project + assigned-task authority
+Users can belong to multiple organizations.
 
-VIEWER
-└── Read-only project authority
-```
+Organization membership and project membership are separate concepts.
+
+Only organization members can be added to projects.
+
+### Visibility
+
+| Role            | Organization Visibility               |
+| --------------- | ------------------------------------- |
+| ADMIN           | All organization projects and members |
+| PROJECT_MANAGER | Projects they manage                  |
+| MEMBER          | Projects they belong to               |
+| VIEWER          | Projects they belong to               |
+
+A Project Manager may manage projects across multiple organizations.
 
 ---
 
-# 3. Organization Scope
+# 3. Organization Permissions
 
-## Admin
+| Permission                    | Admin |      PM |  Member |  Viewer |
+| ----------------------------- | ----: | ------: | ------: | ------: |
+| View organization             |   Yes | Limited | Limited | Limited |
+| View all projects             |   Yes |      No |      No |      No |
+| View assigned projects        |   Yes |     Yes |     Yes |     Yes |
+| View all organization members |   Yes |      No |      No |      No |
+| View project-team members     |   Yes |     Yes |     Yes |     Yes |
+| Invite members                |   Yes |     Yes |      No |      No |
+| Change Member ↔ Viewer role   |   Yes |    Yes* |      No |      No |
+| Change Admin role             |   Yes |      No |      No |      No |
+| Change PM role                |   Yes |      No |      No |      No |
+| Organization settings         |   Yes |      No |      No |      No |
+| Create project                |   Yes |     Yes |      No |      No |
 
-Admin is an **organization-level entity**.
+* PM can change Member ↔ Viewer only within projects they manage.
 
-An Admin can operate across the entire organization.
-
-```text
-Organization A
-├── Project A
-├── Project B
-├── Project C
-└── Project D
-
-Admin
-└── Access to all projects
-```
-
-The Admin cannot access another organization unless they are also a member of that organization.
-
----
-
-## Project Manager
-
-Project Manager is a **project-level entity**.
-
-A Project Manager can only operate inside projects they manage.
-
-```text
-Organization A
-
-Project A → Ayan is PM
-Project B → Raman is PM
-Project C → Rahul is PM
-```
-
-Ayan:
-
-```text
-Project A → ✅
-Project B → ❌
-Project C → ❌
-```
-
-A user can be a Project Manager for projects across multiple organizations.
+PM cannot promote someone to Admin or Project Manager.
 
 ---
 
-## Member
+# 4. Project Permissions
 
-A Member can access only projects where they are a project member.
+| Project Action         |           Admin |               PM |            Member |            Viewer |
+| ---------------------- | --------------: | ---------------: | ----------------: | ----------------: |
+| View project           | Any org project | Managed projects | Assigned projects | Assigned projects |
+| Create project         |             Yes |              Yes |                No |                No |
+| Edit project           | Any org project | Managed projects |                No |                No |
+| Change project status  | Any org project | Managed projects |                No |                No |
+| Archive project        | Any org project | Managed projects |                No |                No |
+| Delete project         | Any org project |               No |                No |                No |
+| Project settings       | Any org project | Managed projects |                No |                No |
+| Manage project members | Any org project | Managed projects |                No |                No |
 
-Being an organization member does **not** automatically grant access to every project.
-
----
-
-## Viewer
-
-Viewer follows the same project visibility boundary as Member.
-
-Viewers can access projects they belong to but have read-only permissions.
-
----
-
-# 4. Organization-Level Permissions
-
-| Permission                    | Admin | Project Manager |  Member |  Viewer |
-| ----------------------------- | :---: | :-------------: | :-----: | :-----: |
-| View organization             |   ✅   |     Limited     | Limited | Limited |
-| View all projects             |   ✅   |        ❌        |    ❌    |    ❌    |
-| View assigned projects        |   ✅   |        ✅        |    ✅    |    ✅    |
-| View all organization members |   ✅   |        ❌        |    ❌    |    ❌    |
-| View project-team members     |   ✅   |        ✅        |    ✅    |    ✅    |
-| Invite members                |   ✅   |        ✅        |    ❌    |    ❌    |
-| Change member role            |   ✅   |        ✅*       |    ❌    |    ❌    |
-| Change Admin role             |   ✅   |        ❌        |    ❌    |    ❌    |
-| Change Project Manager role   |   ✅   |        ❌        |    ❌    |    ❌    |
-| Organization settings         |   ✅   |        ❌        |    ❌    |    ❌    |
-| Create project                |   ✅   |        ✅        |    ❌    |    ❌    |
-
-`*` Project Managers can change `MEMBER ↔ VIEWER` within projects they manage.
-
-They cannot promote someone to Admin or Project Manager or change another Project Manager's role.
+Permanent project deletion is Admin-only.
 
 ---
 
-# 5. Project Management Permissions
+# 5. Project Membership
 
-| Project Action         |           Admin           |  Project Manager |       Member      |       Viewer      |
-| ---------------------- | :-----------------------: | :--------------: | :---------------: | :---------------: |
-| View project           | All organization projects | Managed projects | Assigned projects | Assigned projects |
-| Create project         |             ✅             |         ✅        |         ❌         |         ❌         |
-| Edit project           |  Any organization project | Managed projects |         ❌         |         ❌         |
-| Change project status  |  Any organization project | Managed projects |         ❌         |         ❌         |
-| Archive project        |  Any organization project | Managed projects |         ❌         |         ❌         |
-| Delete project         |  Any organization project |         ❌        |         ❌         |         ❌         |
-| Project settings       |  Any organization project | Managed projects |         ❌         |         ❌         |
-| Manage project members |  Any organization project | Managed projects |         ❌         |         ❌         |
+A project member must already be a member of the organization.
 
-### Project deletion
+Project membership determines access to project resources.
 
-Permanent project deletion is an **Admin-only destructive operation**.
+A project can contain:
 
-A Project Manager can archive a project but cannot permanently delete it.
+* Project Manager
+* Members
+* Viewers
+
+A user may belong to multiple projects and organizations.
 
 ---
 
-# 6. Project Membership
+# 6. Project Manager
 
-Project membership is separate from organization membership.
+A Project Manager:
+
+* Manages projects assigned to them.
+* Can create projects.
+* Can add/remove project members.
+* Can change Member ↔ Viewer within their projects.
+* Can manage project settings.
+* Can archive/restore projects.
+* Can create and manage tasks within their projects.
+* Can assign tasks.
+* Can transfer active tasks.
+* Can change the reviewer of an IN_REVIEW task.
+* Cannot promote users to Admin or Project Manager.
+
+---
+
+# 7. Task Authorization Model
+
+Tasks contain three important responsibility fields:
 
 ```text
-Organization Membership
-        ↓
-Project Membership
-        ↓
-Project Team
+assignedBy
+assignedTo
+reviewer
 ```
 
-A user must first belong to the organization before they can become a project member.
+### assignedBy
 
-### Project Manager can:
+The person who delegated/created the current task assignment.
 
-* Add organization members to their projects.
-* Remove members from their projects.
-* Change `MEMBER → VIEWER`.
-* Change `VIEWER → MEMBER`.
+### assignedTo
 
-### Project Manager cannot:
+The person responsible for completing the task.
 
-* Add someone who is not an organization member.
-* Promote someone to Admin.
-* Promote someone to Project Manager.
-* Change another Project Manager's organization role.
+### reviewer
+
+The person responsible for reviewing the task when it is IN_REVIEW.
+
+These are separate responsibilities.
 
 ---
 
-# 7. Task Permission Model
+# 8. Task Permissions
 
-Task permissions use different scopes for different roles.
+| Task Action                |                   Admin |                    PM |                   Member |        Viewer |
+| -------------------------- | ----------------------: | --------------------: | -----------------------: | ------------: |
+| View task                  |           All org tasks | Managed-project tasks |            Project tasks | Project tasks |
+| Create task                |         Any org project |      Managed projects |                       No |            No |
+| Edit task administratively |                Any task | Managed-project tasks |                       No |            No |
+| Assign task                |                Any task | Managed-project tasks |                       No |            No |
+| Change workflow status     | Tasks assigned by Admin |  Tasks assigned by PM | Tasks assigned to Member |            No |
+| Submit for review          | Tasks assigned by Admin |  Tasks assigned by PM | Tasks assigned to Member |            No |
+| Approve                    | Tasks assigned by Admin |  Tasks assigned by PM |                       No |            No |
+| Request changes            | Tasks assigned by Admin |  Tasks assigned by PM |                       No |            No |
+| Delete task                |            Any org task | Managed-project tasks |                       No |            No |
 
-### Admin
+### Important
 
-Admin is organization-scoped.
+For Admin/PM workflow authority:
 
-Admin can view, create, edit, assign, and delete tasks across projects belonging to their organization.
+> Scope is based on **tasks they assigned**, not tasks assigned to themselves.
 
-Workflow actions are additionally restricted by **who assigned the task**.
+For Member workflow authority:
 
-### Project Manager
-
-Project Manager is project-scoped.
-
-A PM can operate on tasks inside projects they manage.
-
-Workflow actions are additionally restricted by **tasks assigned by that PM**.
-
-### Member
-
-Member has project visibility but task workflow authority only for tasks **assigned to them**.
-
-### Viewer
-
-Viewer has read-only task access inside their assigned projects.
+> Scope is based on **tasks assigned to that Member**.
 
 ---
 
-# 8. Task Permissions Matrix
+# 9. Member Task Editing
 
-| Task Action           | Admin                       | Project Manager              | Member                     | Viewer                     |
-| --------------------- | --------------------------- | ---------------------------- | -------------------------- | -------------------------- |
-| **View Task**         | All tasks in organization   | Tasks in managed projects    | Tasks in assigned projects | Tasks in assigned projects |
-| **Create Task**       | Any project in organization | Managed projects             | ❌                          | ❌                          |
-| **Edit Task**         | Any task in organization    | Any task in managed projects | ❌*                         | ❌                          |
-| **Assign Task**       | Any task in organization    | Any task in managed projects | ❌                          | ❌                          |
-| **Change Status**     | Tasks assigned by Admin     | Tasks assigned by PM         | Tasks assigned to Member   | ❌                          |
-| **Submit for Review** | Tasks assigned by Admin     | Tasks assigned by PM         | Tasks assigned to Member   | ❌                          |
-| **Approve**           | Tasks assigned by Admin     | Tasks assigned by PM         | ❌                          | ❌                          |
-| **Request Changes**   | Tasks assigned by Admin     | Tasks assigned by PM         | Tasks assigned to Member   | ❌                          |
-| **Delete Task**       | Any task in organization    | Any task in managed projects | ❌                          | ❌                          |
+Members cannot administratively modify task ownership or permissions.
 
-`*` Members can modify working information on their assigned tasks according to the field-level rules below.
+However, the current assignee may edit the working content of their assigned task.
 
----
-
-# 9. Task Assignment Scope
-
-There is an important distinction between:
-
-* **Assigned by** → the person who delegated/assigned the task.
-* **Assigned to** → the person responsible for doing the task.
-
-### Admin / Project Manager
-
-The following workflow actions use **Assigned By**:
-
-* Change Status
-* Submit for Review
-* Approve
-* Request Changes
-
-Example:
-
-```text
-Task A
-
-Assigned by: Raman
-Assigned to: Sujal
-```
-
-Raman can perform the appropriate workflow actions on Task A.
-
----
-
-### Member
-
-Member workflow actions use **Assigned To**.
-
-```text
-Task A
-
-Assigned by: Ayan
-Assigned to: Raman
-```
-
-Raman can:
-
-```text
-Change Status       ✅
-Submit for Review   ✅
-Request Changes     ✅
-Approve             ❌
-```
-
----
-
-# 10. Task Editing
-
-Task editing should eventually use **field-level authorization** rather than one simple `EDIT_TASK` permission.
-
-### Worker-editable fields
-
-An assigned Member can modify working information such as:
+Examples:
 
 * Title
 * Description
@@ -313,35 +184,30 @@ An assigned Member can modify working information such as:
 * Checklist/subtasks
 * Attachments
 
-### Management fields
+This must be implemented using **field-level authorization**.
 
-Management fields remain controlled by Admin/Project Manager, such as:
+Members cannot:
 
-* Assignee
-* Assignment
-* Project
-* Administrative fields
-
-Example:
-
-```text
-Member
-└── Assigned Task
-    ├── Edit title             ✅
-    ├── Edit description       ✅
-    ├── Change deadline        ✅
-    ├── Change priority        ✅
-    ├── Manage checklist       ✅
-    ├── Add attachments        ✅
-    ├── Change assignee        ❌
-    └── Delete task            ❌
-```
+* Change assignee
+* Change assignedBy
+* Change reviewer
+* Delete task
+* Administratively modify task permissions
 
 ---
 
-# 11. Task Workflow
+# 10. Task State Machine
 
-The planned task lifecycle is:
+ProjectFlow uses four task states:
+
+```text
+TO_DO
+IN_PROGRESS
+IN_REVIEW
+DONE
+```
+
+Valid transitions:
 
 ```text
 TO_DO
@@ -349,416 +215,500 @@ TO_DO
 IN_PROGRESS
   ↓
 IN_REVIEW
-  ↓
-DONE
+  ├── APPROVE → DONE
+  └── REQUEST_CHANGES → IN_PROGRESS
 ```
 
-If changes are requested:
-
-```text
-IN_REVIEW
-    ↓
-REQUEST CHANGES
-    ↓
-IN_PROGRESS
-```
-
-The detailed state-machine rules will be finalized separately.
+No separate `CHANGES_REQUESTED` task state exists.
 
 ---
 
-# 12. Collaboration Permissions
+# 11. Task Workflow Rules
 
-Collaboration follows **project access**, not task assignment.
+### TO_DO → IN_PROGRESS
 
-A Member does not need to be assigned to a task to collaborate on it.
+Only the current assignee can start the task.
+
+### IN_PROGRESS → IN_REVIEW
+
+Only the current assignee can submit the task for review.
+
+### IN_REVIEW → DONE
+
+Only the current reviewer can approve the task.
+
+### IN_REVIEW → IN_PROGRESS
+
+Only the current reviewer can request changes.
+
+Feedback must be stored with the review.
+
+---
+
+# 12. Review History
+
+Reviews are stored separately from the task.
+
+Recommended model:
+
+```text
+task_reviews
+------------
+id
+task_id
+reviewer_id
+decision
+feedback
+created_at
+```
+
+Decision:
+
+```text
+APPROVED
+CHANGES_REQUESTED
+```
+
+Reviews are never overwritten.
 
 Example:
 
 ```text
-Project A
+Review #1
+CHANGES_REQUESTED
+"Fix refresh-token validation."
 
-Task 1 → Raman
-Task 2 → Sujal
-Task 3 → Ayan
+Review #2
+APPROVED
+"Looks good."
 ```
 
-Raman can still collaborate on Task 2 or Task 3 because Raman belongs to Project A.
+The task stores the current state and current reviewer; `task_reviews` stores historical review decisions.
 
 ---
 
-# 13. Comment Permissions
+# 13. Reviewer Rules
 
-| Comment Action          |     Admin    |  Project Manager |       Member      |       Viewer      |
-| ----------------------- | :----------: | :--------------: | :---------------: | :---------------: |
-| View comments           | Organization | Managed projects | Assigned projects | Assigned projects |
-| Create comment          | Organization | Managed projects | Assigned projects |         ❌         |
-| Reply to comment        | Organization | Managed projects | Assigned projects |         ❌         |
-| Edit own comment        |       ✅      |         ✅        |         ✅         |         ❌         |
-| Delete own comment      |       ✅      |         ✅        |         ✅         |         ❌         |
-| Delete others' comments |       ✅      | Managed projects |         ❌         |         ❌         |
+A reviewer can be any appropriate member of the project team.
 
-### Comment rule
+The reviewer does not have to be the Project Manager.
 
-Members can comment on any task inside a project they belong to, even if the task is assigned to someone else.
+While a task is IN_REVIEW:
 
----
+* The current reviewer can approve.
+* The current reviewer can request changes.
+* The current reviewer cannot arbitrarily change the task to another state.
+* A Project Manager can reassign the reviewer.
+* Reviewer reassignment does **not** change task state.
 
-# 14. Attachment Permissions
-
-| Attachment Action         |     Admin    |  Project Manager |       Member      |       Viewer      |
-| ------------------------- | :----------: | :--------------: | :---------------: | :---------------: |
-| View attachment           | Organization | Managed projects | Assigned projects | Assigned projects |
-| Upload attachment         | Organization | Managed projects | Assigned projects |         ❌         |
-| Delete own attachment     |       ✅      |         ✅        |         ✅         |         ❌         |
-| Delete others' attachment |       ✅      | Managed projects |         ❌         |         ❌         |
-
-Attachments follow the access boundary of their parent task/project.
-
----
-
-# 15. Mention Permissions
-
-Users can mention another user only when the mentioned user has access to the same project.
+Example:
 
 ```text
-Create Comment
-      ↓
-Extract @mentions
-      ↓
-Is mentioned user an organization member?
-      ↓
-Is mentioned user a project member?
-      ↓
-YES
-      ↓
-Create Mention
-      ↓
-Create Notification
+Reviewer A
+     ↓
+Reviewer unavailable
+     ↓
+PM changes reviewer
+     ↓
+Reviewer B
+     ↓
+Task remains IN_REVIEW
 ```
 
-A user who cannot access the project should not be mentionable.
-
-This prevents accidental information leakage.
+Reviewer changes are recorded in activity history.
 
 ---
 
-# 16. Notification Permissions
+# 14. Task Transfer
 
-Notifications are generated from business events.
+Task transfer changes the current assignee.
 
-Examples include:
+Example:
+
+```text
+assignedTo = Ayan
+        ↓
+PM transfers task
+        ↓
+assignedTo = Raman
+```
+
+The historical assignment must not be destroyed.
+
+PM/Admin can:
+
+* View a member's active tasks.
+* Transfer one active task.
+* Bulk-transfer active tasks.
+* Select the new assignee.
+
+The target must have appropriate access to the project.
+
+Completed tasks do not require transfer.
+
+---
+
+# 15. Task Transfer Events
+
+A task transfer must create an activity record.
+
+Example:
+
+> Debangshu transferred Task #42 from Ayan to Raman.
+
+For bulk transfers:
+
+* Each affected task must retain transfer history.
+* A bulk-level activity event may additionally be recorded.
+
+No automatic reassignment should occur.
+
+Explicit transfer is required.
+
+---
+
+# 16. Reviewer Transfer
+
+If an IN_REVIEW task's reviewer becomes unavailable:
+
+```text
+reviewer A
+    ↓
+reviewer B
+```
+
+The task remains:
+
+```text
+IN_REVIEW
+```
+
+The reviewer change must be recorded in activity history.
+
+---
+
+# 17. Collaboration
+
+Collaboration follows **project access**, not task assignment.
+
+A Member can comment on any task in a project they belong to, even when they are not assigned to that task.
+
+Viewer:
+
+* Can view comments.
+* Cannot create comments.
+* Cannot reply.
+* Cannot edit/delete comments.
+
+Users can edit/delete their own comments.
+
+Admin can moderate comments across the organization.
+
+PM can moderate comments in projects they manage.
+
+Members cannot delete other users' comments.
+
+---
+
+# 18. Attachments
+
+Attachment visibility follows project access.
+
+### Admin / PM
+
+Can upload and moderate attachments within their scope.
+
+### Member
+
+Can upload attachments to projects they belong to.
+
+Users can delete their own attachments.
+
+Admin/PM can moderate attachments within their scope.
+
+### Viewer
+
+Read-only.
+
+---
+
+# 19. Mentions
+
+Users can only mention people who have access to the same project.
+
+Flow:
+
+```text
+Comment created
+      ↓
+Extract mentions
+      ↓
+Validate project access
+      ↓
+Create mention
+      ↓
+Create notification
+```
+
+---
+
+# 20. Notifications
+
+Notifications are user-facing consequences of business events.
+
+Examples:
 
 ```text
 TASK_ASSIGNED
-TASK_STATUS_CHANGED
+TASK_REASSIGNED
 TASK_SUBMITTED_FOR_REVIEW
 TASK_APPROVED
 TASK_CHANGES_REQUESTED
-
+TASK_REVIEWER_CHANGED
 COMMENT_CREATED
 COMMENT_REPLIED
 USER_MENTIONED
-
 PROJECT_MEMBER_ADDED
 PROJECT_MEMBER_REMOVED
 ```
 
-Notifications may eventually be delivered through:
-
-* In-app notifications
-* Email notifications
-
-The exact notification lifecycle will be finalized separately.
+Notifications should not replace historical activity.
 
 ---
 
-# 17. Activity / Audit
+# 21. Activity / Audit Log
 
-Activity logs are different from notifications.
+Activity is the permanent historical record.
 
-### Notification
-
-```text
-"Raman assigned you Task #123."
-```
-
-### Activity
+Examples:
 
 ```text
-"Raman assigned Task #123 to Sujal."
+Raman assigned Task #42 to Ayan.
+
+Ayan submitted Task #42 for review.
+
+Sujal requested changes on Task #42.
+
+Sujal approved Task #42.
+
+Ayan transferred Task #42 to Raman.
+
+Raman changed reviewer from Sujal to Debangshu.
+
+Ayan transferred Project A to Raman.
 ```
 
-Notifications are user-facing alerts.
+Activity records must preserve the identity of the actor.
 
-Activity logs are historical/audit records.
-
-Important events should create activity records, including:
-
-```text
-Project created
-Project archived
-Project member added
-Project member removed
-Role changed
-
-Task created
-Task assigned
-Task reassigned
-Task status changed
-Task submitted for review
-Task approved
-Changes requested
-Task deleted
-
-Comment created
-Comment edited
-Comment deleted
-Attachment uploaded
-Attachment deleted
-Mention created
-```
+Historical activity must never be rewritten because responsibility changes.
 
 ---
 
-# 18. Lifecycle Principles
+# 22. Business Event Pattern
 
-The lifecycle model follows this core principle:
+Business operations should follow:
+
+```text
+Authorization
+      ↓
+State Change
+      ↓
+Activity
+      ↓
+Notification
+      ↓
+Optional Email
+```
+
+The core database state change must remain authoritative.
+
+---
+
+# 23. Lifecycle Principle
 
 > **No active responsibility may become orphaned because of a membership or role change.**
 
-Historical data is preserved.
-
-Current responsibility must be explicitly transferred before access is removed.
+Before removing or transferring a person, check their active responsibilities.
 
 ---
 
-# 19. Member Leaving Organization
+# 24. Responsibilities That Block Exit
 
-A member cannot simply leave if they still have active responsibilities.
-
-Before leaving, active responsibilities must be resolved through transfer/unassignment according to the lifecycle rules.
-
-Historical data remains.
-
-The following do **not** prevent leaving:
-
-* Completed tasks
-* Historical comments
-* Historical attachments
-* Historical activity
-* Pending invitations created by the user
-
-Pending invitations are **not automatically deleted** when the creator leaves.
+| Responsibility                      | Blocks Exit |
+| ----------------------------------- | ----------: |
+| TO_DO task assigned to user         |         Yes |
+| IN_PROGRESS task assigned to user   |         Yes |
+| IN_REVIEW task assigned to user     |         Yes |
+| DONE task assigned to user          |          No |
+| PM of active project                |         Yes |
+| PM of archived project              |         Yes |
+| Reviewer of IN_REVIEW task          |         Yes |
+| Pending invitations created by user |          No |
+| Historical comments                 |          No |
+| Historical attachments              |          No |
+| Historical activity                 |          No |
 
 ---
 
-# 20. Active Responsibilities
+# 25. Member Leaving Organization
 
-The following responsibilities currently block a user's exit:
+A user cannot leave the organization while they have active responsibilities.
 
-| Responsibility                           | Blocks Exit |
-| ---------------------------------------- | :---------: |
-| `TO_DO` task assigned to user            |      ✅      |
-| `IN_PROGRESS` task assigned to user      |      ✅      |
-| `IN_REVIEW` task assigned to user        |      ✅      |
-| `DONE` task assigned to user             |      ❌      |
-| Project Manager of project               |      ✅      |
-| Project Manager of archived project      |      ✅      |
-| Assigned reviewer of an `IN_REVIEW` task |      ✅      |
-| Pending invitation created by user       |      ❌      |
-| Historical comments                      |      ❌      |
-| Historical attachments                   |      ❌      |
-| Historical activity                      |      ❌      |
+Before leaving:
+
+1. Active tasks must be transferred/resolved.
+2. Active reviewer responsibilities must be transferred.
+3. Project Manager responsibilities must be transferred.
+4. Project memberships are removed.
+5. Historical data remains.
+
+Pending invitations created by the user are not deleted.
 
 ---
 
-# 21. Member Removal
+# 26. Member Removal
 
-Before removing a member, ProjectFlow must check their active responsibilities.
+Removing a member follows the same responsibility checks as voluntary exit.
 
-Example:
+A user with active responsibilities cannot simply be removed.
 
-```text
-Remove Member
-      ↓
-Check active tasks
-      ↓
-Active responsibilities?
-      ↓
-YES
-      ↓
-Transfer responsibilities
-      ↓
-Re-check
-      ↓
-No active responsibilities
-      ↓
-Remove member
-```
+Responsibilities must first be transferred/resolved.
 
-The system should provide explicit options for handling their active tasks/projects before removal.
+Historical data remains attributed to the original user.
 
 ---
 
-# 22. Member Removed From Project
+# 27. Member Removed From Project
 
-A member cannot simply be removed from a project while they still have active task responsibilities in that project.
+A member cannot be removed from a project while they have active assigned tasks in that project.
 
 Before removal:
 
 ```text
-Member
-   ↓
-Has active tasks?
-   ↓
-YES
-   ↓
-Transfer tasks to another project member
-   ↓
-No active tasks
-   ↓
+Find active tasks
+      ↓
+Transfer tasks
+      ↓
+Verify no active responsibilities
+      ↓
 Remove project membership
 ```
 
-Historical activity remains unchanged.
+No automatic reassignment.
 
 ---
 
-# 23. Project Manager Leaving
+# 28. Task Assignee Losing Project Access
 
-A Project Manager cannot leave while they are still responsible for a project.
+A task assignee cannot lose project access while active tasks remain assigned to them.
 
-Before leaving:
+Before removal/exit:
 
 ```text
-Current Project Manager
-        ↓
-Transfer Project
-        ↓
-New Project Manager
-        ↓
-Project responsibility transferred
-        ↓
-Old PM can leave
+Find active tasks
+      ↓
+Explicitly transfer tasks
+      ↓
+Verify responsibilities cleared
+      ↓
+Remove access
 ```
 
-The transfer preserves:
+---
 
-* Project
+# 29. Project Manager Leaving
+
+A Project Manager cannot leave while they manage a project, including an archived project.
+
+They must first transfer the project.
+
+After transfer:
+
+```text
+Old PM → Member
+New PM → Project Manager
+```
+
+The project itself does not move.
+
+All project resources remain attached to the same project:
+
 * Tasks
-* Project members
+* Members
 * Comments
 * Attachments
 * Invitations
 * Notifications
-* Activity history
+* Activity
+* History
 
-Historical actions remain attributed to the original Project Manager.
+Only current Project Manager responsibility changes.
+
+Historical actions remain attributed to the old PM.
+
+---
+
+# 30. Project Transfer
+
+Project transfer is a responsibility transfer.
 
 Example:
 
 ```text
-Ayan created Project A
-Ayan assigned Task #1
-Ayan requested changes
-Ayan transferred Project A → Raman
+Ayan = PM
+Raman = Member
 
-Raman became Project Manager
-Raman assigned Task #10
+Ayan transfers Project A to Raman
+
+Raman = PM
+Ayan = Member
 ```
 
-History is never rewritten.
+No project resources are physically moved.
+
+The transfer must be atomic.
+
+Activity:
+
+> Ayan transferred Project A to Raman.
+
+The new PM receives the project-management scope previously held by the old PM.
 
 ---
 
-# 24. Project Transfer
-
-Project transfer is an explicit lifecycle operation.
-
-```text
-TRANSFER PROJECT
-       ↓
-Select new Project Manager
-       ↓
-Transfer project management responsibility
-       ↓
-Preserve project data
-       ↓
-Preserve historical activity
-       ↓
-Old PM can leave
-```
-
-The exact atomic transaction and transfer mechanics will be designed separately.
-
----
-
-# 25. Admin Leaving Organization
+# 31. Admin Leaving
 
 An Admin cannot simply leave an organization.
 
-Before leaving:
+Administration must first be transferred to another appropriate user.
 
-```text
-Admin
- ↓
-Transfer Administration
- ↓
-Another member becomes Admin
- ↓
-Old Admin loses Admin role
- ↓
-Old Admin can leave
-```
+The organization must never have zero Admins.
 
-The organization must never be left without an Admin.
+Admin transfer must be atomic.
 
-Historical actions performed by the previous Admin remain attributed to that user.
+Historical Admin actions remain attributed to the previous Admin.
 
 ---
 
-# 26. Organization Deletion
+# 32. Organization Deletion
 
-Organization deletion is a controlled business operation.
+Organization deletion is separate from leaving.
 
-Before deletion:
+An organization cannot be deleted while outstanding billing obligations remain.
 
-```text
-Admin requests deletion
-        ↓
-Check outstanding billing
-        ↓
-Outstanding bills?
-     /          \
-   YES           NO
-    ↓             ↓
- BLOCK         Continue
-```
+Billing must be cleared before organization deletion.
 
-An organization cannot be deleted while outstanding bills remain unresolved.
-
-Organization deletion must therefore be treated separately from simply deleting an organization row from PostgreSQL.
-
-The exact data-retention/deletion policy remains to be finalized.
+Data retention/deletion policy must be finalized before implementing permanent organization deletion.
 
 ---
 
-# 27. Project Archive
+# 33. Project Archive
 
 Archive means:
 
-> **Frozen project, not deleted project.**
+> **Frozen, not deleted.**
 
-```text
-ACTIVE
-  ↓
-ARCHIVED
-```
-
-Archived projects retain their historical data.
-
-Expected retained data includes:
+Archived projects retain:
 
 * Tasks
 * Comments
@@ -768,261 +718,312 @@ Expected retained data includes:
 * Notifications
 * History
 
-The exact set of blocked operations while archived will be finalized during the state-machine phase.
+Archive does not destroy data.
 
-A project can eventually be restored:
+Restore must be supported.
 
-```text
-ARCHIVED
-    ↓
-RESTORE
-    ↓
-ACTIVE
-```
+The exact list of operations blocked while archived must be enforced by the project state machine.
 
 ---
 
-# 28. Task Assignee Leaving / Losing Project Access
+# 34. Historical Data Principle
 
-A user should **not be allowed to lose project access while they still have active tasks assigned to them**.
+Responsibility transfer changes **current responsibility**, not historical identity.
 
-Before project removal or organization exit:
-
-```text
-User
- ↓
-Check active assigned tasks
- ↓
-Active tasks?
- ↓
-YES
- ↓
-Transfer tasks to another person
- ↓
-No active tasks
- ↓
-Allow access removal / exit
-```
-
-This prevents tasks from becoming orphaned.
-
----
-
-# 29. Task Assigner / Project Manager Leaving
-
-A Project Manager who has assigned tasks does not need those historical assignments rewritten.
-
-Instead, the PM must first transfer the project:
-
-```text
-Old PM
-   ↓
-Transfer Project
-   ↓
-New PM
-   ↓
-Project + current responsibilities transfer
-   ↓
-Old PM leaves
-```
-
-Historical assignment records remain unchanged.
+Never rewrite historical records to make them appear as though the new user performed the original action.
 
 Example:
 
 ```text
-Task #123
-
-Assigned by: Ayan
-Assigned to: Sujal
-
-Ayan later transfers Project A → Raman
+Ayan created project
+Ayan assigned task
+Ayan requested changes
+Ayan transferred project to Raman
 ```
 
-The historical record remains:
+After transfer:
 
 ```text
-Assigned by: Ayan
+Raman manages project
 ```
 
-It does not become:
+But history remains:
 
 ```text
-Assigned by: Raman
+Ayan created project
+Ayan assigned task
+Ayan requested changes
+Ayan transferred project
 ```
 
 ---
 
-# 30. Historical Data Principle
+# 35. Transfer History
 
-ProjectFlow must distinguish between:
+Transfers must be auditable.
 
-### Historical identity
+At minimum, record:
 
-Who performed an action?
+### Project transfer
 
 ```text
-actor = Ayan
+actor
+project
+previous_pm
+new_pm
+timestamp
 ```
 
-### Current responsibility
-
-Who is responsible now?
+### Task transfer
 
 ```text
-currentProjectManager = Raman
+actor
+task
+previous_assignee
+new_assignee
+timestamp
 ```
 
-These must never be confused.
-
-Transfers should change **current responsibility**, not rewrite historical records.
-
----
-
-# 31. Lifecycle Invariant
-
-ProjectFlow should enforce:
-
-> **No active project, task, review, or management responsibility may become orphaned because a user leaves, is removed, or changes role.**
-
-The system should use a **pre-exit responsibility check**.
+### Reviewer transfer
 
 ```text
-User requests exit/removal
-          ↓
-Check responsibilities
-          ↓
-┌─────────────────────┐
-│ Active responsibility│
-└──────────┬──────────┘
-           ↓
-        Found?
-       /       \
-     YES        NO
-      ↓          ↓
-   BLOCK       ALLOW
-      ↓
-Transfer / resolve
-      ↓
-Re-check
-      ↓
-ALLOW
+actor
+task
+previous_reviewer
+new_reviewer
+timestamp
 ```
 
 ---
 
-# 32. Still To Define
+# 36. Core Lifecycle Invariant
 
-The following are intentionally **not finalized yet**:
+Before removing access, changing organizational responsibility, or allowing a user to leave:
 
-### Transfer Mechanics
+```text
+Check active responsibilities
+        ↓
+Transfer / resolve responsibilities
+        ↓
+Verify no blocking responsibilities remain
+        ↓
+Change membership / role / access
+```
 
-* Exact Project Transfer workflow
-* Exact Task Transfer workflow
-* Bulk task transfer
-* Transfer validation
-* Transfer confirmation
-* Transaction boundaries
-* What happens if a transfer partially fails
-
-### Task State Machine
-
-* Exact allowed transitions
-* Who can perform each transition
-* Review assignment
-* Review failure
-* Review feedback
-* Reopening rules
-* Whether `CHANGES_REQUESTED` is a state or review result
-
-### Lifecycle Notifications
-
-* Who gets notified after transfers
-* Who gets notified after removal
-* Who gets notified when tasks are transferred
-* Review notifications
-* Project transfer notifications
-
-### Billing / Deletion
-
-* Billing states
-* Grace period
-* Organization deletion workflow
-* Data retention
-* Final hard deletion policy
+Never silently orphan active work.
 
 ---
 
-# 33. Design Principle
+# 37. Locked Task Workflow
 
-The current ProjectFlow lifecycle philosophy is:
-
-```text
-Permissions
-    ↓
-Determine who can act
-
-Lifecycle
-    ↓
-Determine what happens when state changes
-
-Transfer
-    ↓
-Move current responsibility
-
-History
-    ↓
-Preserve what happened
-
-Notifications
-    ↓
-Tell affected users
-```
-
-The system should **never solve lifecycle problems by silently deleting or rewriting historical data**.
-
----
-
-# 34. Next Phase
-
-The next phase is:
-
-## Transfer Operations + Task State Machine
-
-We will define:
-
-```text
-Transfer Project
-Transfer Tasks
-Transfer Review Responsibility
-Transfer Administration
-```
-
-Then formally define:
+The final task workflow is:
 
 ```text
 TO_DO
-   ↓
+  │
+  │ assignee starts
+  ▼
 IN_PROGRESS
-   ↓
+  │
+  │ assignee submits
+  ▼
 IN_REVIEW
-   ↓
-DONE
-
-IN_REVIEW
-   ↓
-REQUEST CHANGES
-   ↓
-IN_PROGRESS
+  │
+  ├── reviewer approves
+  │       ▼
+  │      DONE
+  │
+  └── reviewer requests changes
+          ▼
+      IN_PROGRESS
 ```
 
-including:
+Review feedback is persisted in `task_reviews`.
 
-* Who can transition each state
-* Review assignment
-* Review feedback
-* Failed review
-* Notifications
-* Activity events
-* Lifecycle interactions
+Review history is immutable.
+
+---
+
+# 38. Initial Business Events
+
+The initial event vocabulary should include:
+
+```text
+TASK_CREATED
+TASK_ASSIGNED
+TASK_REASSIGNED
+TASK_STATUS_CHANGED
+TASK_SUBMITTED_FOR_REVIEW
+TASK_APPROVED
+TASK_CHANGES_REQUESTED
+TASK_REVIEWER_CHANGED
+
+PROJECT_TRANSFERRED
+PROJECT_MEMBER_ADDED
+PROJECT_MEMBER_REMOVED
+
+COMMENT_CREATED
+COMMENT_REPLIED
+COMMENT_UPDATED
+COMMENT_DELETED
+
+ATTACHMENT_ADDED
+ATTACHMENT_DELETED
+
+USER_MENTIONED
+```
+
+The exact event implementation can use an internal event/service layer rather than requiring a full distributed event bus.
+
+---
+
+# 39. Implementation Principle
+
+Do not implement authorization as scattered role checks such as:
+
+```text
+if (user.role === "ADMIN")
+```
+
+throughout controllers.
+
+Authorization should be centralized around:
+
+```text
+Role
++
+Organization membership
++
+Project membership
++
+Project ownership/management scope
++
+Task assignment
++
+Reviewer responsibility
++
+Resource state
+```
+
+Controllers should remain thin.
+
+Business authorization and lifecycle rules belong in the service/domain layer.
+
+---
+
+# 40. Production-Grade Requirement
+
+ProjectFlow is not production-grade merely because the CRUD endpoints work.
+
+Before calling V1 complete, the system must have:
+
+* Correct authorization
+* Correct lifecycle enforcement
+* Transaction-safe transfers
+* Valid state transitions
+* Field-level authorization
+* Input validation
+* Secure authentication
+* Database constraints
+* Consistent error handling
+* Idempotency where required
 * Transaction boundaries
+* Audit/activity history
+* Notifications
+* Background jobs
+* Rate limiting
+* Logging
+* Observability
+* Tests
+* API documentation
+* Deployment
+* CI/CD
+* Backups/recovery
+* Security hardening
+* Frontend authorization-aware UX
+* Production environment configuration
+
+---
+
+# 41. Definition of Done
+
+A feature is not considered complete when its endpoint works.
+
+A feature is complete when:
+
+```text
+Business rule defined
+        ↓
+Database model correct
+        ↓
+Authorization enforced
+        ↓
+Validation enforced
+        ↓
+State transitions enforced
+        ↓
+Transaction boundaries correct
+        ↓
+Activity recorded
+        ↓
+Notification generated where required
+        ↓
+Error cases handled
+        ↓
+Tests written
+        ↓
+API documented
+        ↓
+Frontend integrated
+        ↓
+Production behavior verified
+```
+
+---
+
+# 42. Current Design Status
+
+### LOCKED
+
+* Roles
+* Organization/project scope
+* Project permissions
+* Task permissions
+* Task assignment model
+* Reviewer model
+* Task state machine
+* Review behavior
+* Review history
+* Task transfer
+* Reviewer transfer
+* Project transfer
+* Exit/removal blocking
+* Historical data principle
+* Collaboration permissions
+* Activity vs notification separation
+
+### STILL REQUIRES IMPLEMENTATION/VERIFICATION
+
+* Exact database schema
+* Existing-code authorization mapping
+* Archived-project blocked operations
+* Notification matrix
+* Email behavior
+* Exact transaction boundaries
+* Idempotency rules
+* Error-code catalog
+* Security audit
+* API contract audit
+* Production infrastructure
+* Frontend permission/UX behavior
+* Backup/recovery strategy
+* Observability
+* Automated test coverage
+
+---
+
+# 43. Design Principle
+
+> **Freeze the rules first. Then make the code conform to the rules.**
+
+Do not allow existing implementation shortcuts to redefine the product's business rules.
